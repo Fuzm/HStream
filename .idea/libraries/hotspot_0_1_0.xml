@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="hotspot-0.1.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.github.seven332/hotspot/0.1.0/jars/classes.jar!/" />
+      <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.github.seven332/hotspot/0.1.0/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.seven332/hotspot/0.1.0/33e04024badf79de6620a6755cebe05507145bc5/hotspot-0.1.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

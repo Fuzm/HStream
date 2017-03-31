@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <com.stream.widget.TileThumb
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/detail_thumb"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scaleType="centerCrop"
+        android:foreground="@drawable/tile_background"
+        android:minHeight="200dp"
+        />
+
+    <TextView
+        android:id="@+id/detial_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/listPreferredItemHeightSmall"
+        android:textAppearance="?attr/textAppearanceListItemSmall"
+        android:textColor="?attr/textColorAlertDialogListItem"
+        android:gravity="center_vertical"
+        android:paddingLeft="?attr/listPreferredItemPaddingLeft"
+        android:paddingRight="?attr/listPreferredItemPaddingRight"
+        android:ellipsize="marquee"/>
+
+    <ListView
+        android:id="@+id/source_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"></ListView>
+
+</LinearLayout>

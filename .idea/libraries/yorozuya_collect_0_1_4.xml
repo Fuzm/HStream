@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="yorozuya-collect-0.1.4">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.github.seven332/yorozuya-collect/0.1.4/res" />
+      <root url="jar://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.github.seven332/yorozuya-collect/0.1.4/jars/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.seven332/yorozuya-collect/0.1.4/97e33098aa31d4c27d191a5080de5ffe4ccefdf3/yorozuya-collect-0.1.4-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

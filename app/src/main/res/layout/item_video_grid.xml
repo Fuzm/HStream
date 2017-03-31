@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card_grey_no_padding_2dp">
+
+    <com.stream.widget.TileThumb
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/thumb"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scaleType="centerCrop"
+        android:foreground="@drawable/tile_background"
+        android:minHeight="200dp"
+        />
+
+    <TextView
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|right"
+        android:layout_marginRight="2dp"
+        android:textSize="10dp"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        tools:ignore="SpUsage"/>
+
+</FrameLayout>
