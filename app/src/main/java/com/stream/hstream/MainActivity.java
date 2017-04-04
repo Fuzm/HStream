@@ -22,6 +22,8 @@ import com.stream.scene.StageActivity;
 public class MainActivity extends StageActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    private DrawerLayout mDrawerLayout;
+
     static {
         registerLaunchMode(VideoListFragment.class, SceneFragment.LAUNCH_MODE_SINGLE_TOP);
         registerLaunchMode(VideoDetailFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
@@ -30,6 +32,8 @@ public class MainActivity extends StageActivity
     @Override
     protected void onCreate2() {
         setContentView(R.layout.activity_main);
+
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -120,5 +124,7 @@ public class MainActivity extends StageActivity
         return true;
     }
 
-
+    public void setDrawerLockMode(int lockMode, int edgeGravity) {
+        mDrawerLayout.setDrawerLockMode(lockMode, edgeGravity);
+    }
 }

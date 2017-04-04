@@ -80,7 +80,7 @@ public class VideoListParser {
         }
 
         private static int parsePages(Element e) {
-            String page = e.getElementsByClass("first_last_page").get(0).child(0).html();
+            String page = e.getElementsByClass("first_last_page").last().child(0).html();
             if(null != page && !"".equals(page)) {
                 return Integer.parseInt(page);
             } else {

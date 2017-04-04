@@ -14,7 +14,7 @@ public class Setting {
     public static String getString(String key) {
 
         if(key.equals(KEY_TYPE_REQUEST)) {
-            return TYPE_MOBILE_REQUEST;
+            return TYPE_NORMAL_REQUEST;
         }
 
         return null;

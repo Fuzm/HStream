@@ -1,14 +1,21 @@
 package com.stream.hstream;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,24 +27,32 @@ import com.stream.client.HsRequest;
 import com.stream.client.data.ListUrlBuilder;
 import com.stream.client.data.VideoInfo;
 import com.stream.client.parser.VideoListParser;
+import com.stream.drawable.AddDeleteDrawable;
 import com.stream.scene.Announcer;
 import com.stream.scene.SceneFragment;
+import com.stream.util.AppHelper;
 import com.stream.widget.ContentLayout;
+import com.stream.widget.EditTextDialogBuilder;
+import com.stream.widget.FabLayout;
 import com.stream.widget.VideoAdapter;
 import com.stream.widget.VideoHolder;
 
 import java.util.List;
+import java.util.jar.Pack200;
 
 /**
  * Created by Fuzm on 2017/3/24 0024.
  */
 
-public class VideoListFragment extends SceneFragment implements EasyRecyclerView.OnItemClickListener{
+public class VideoListFragment extends SceneFragment implements EasyRecyclerView.OnItemClickListener, FabLayout.OnClickFabListener,
+                                        FabLayout.OnExpandListener{
 
     private static final String TAG = VideoListFragment.class.getSimpleName();
 
     public final static String KEY_LIST_URL_BUILDER = "list_url_builder";
     public final static String KEY_HAS_FIRST_REFRESH = "has_first_refresh";
+
+    private static final long ANIMATE_TIME = 300L;
 
     private ContentLayout mContentLayout;
     private EasyRecyclerView mRecyclerView;
@@ -45,6 +60,9 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     private VideoListHelper mHelper;
     private HsClient mClient;
     private ListUrlBuilder mUrlBuilder;
+    private FloatingActionButton mSearchFab;
+    private FabLayout mFabLayout;
+    private AddDeleteDrawable mActionFabDrawable;
 
     private boolean mHasFirstRefresh = false;
 
@@ -100,6 +118,21 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         mRecyclerView.setClipToPadding(false);
         mRecyclerView.setOnItemClickListener(this);
 
+        mFabLayout = (FabLayout) view.findViewById(R.id.fab_layout);
+        mFabLayout.setAutoCancel(true);
+        mFabLayout.setExpanded(false);
+        mFabLayout.setHidePrimaryFab(false);
+        mFabLayout.setOnClickFabListener(this);
+        mFabLayout.setOnExpandListener(this);
+        //addAboveSnackView(mFabLayout);
+
+        mActionFabDrawable = new AddDeleteDrawable(getContext());
+        mActionFabDrawable.setColor(resources.getColor(R.color.primary_drawable_dark));
+        mFabLayout.getPrimaryFab().setImageDrawable(mActionFabDrawable);
+
+        mSearchFab = (FloatingActionButton) view.findViewById(R.id.search_fab);
+
+
         if(!mHasFirstRefresh) {
             mHasFirstRefresh = true;
             mHelper.firstRefresh();
@@ -132,6 +165,91 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         announcer.setArgs(args);
         startScene(announcer);
         return true;
+    }
+
+    @Override
+    public void onClickPrimaryFab(FabLayout view, FloatingActionButton fab) {
+        view.toggle();
+    }
+
+    public void showGoToDialog() {
+        Context context = getContext();
+        if(null == context) {
+            return;
+        }
+
+        final int page = mHelper.getPageForTop();
+        final int pages = mHelper.getPages();
+        String hint = getString(R.string.go_to_hint, page, pages);
+        final EditTextDialogBuilder builder = new EditTextDialogBuilder(context, hint);
+        final AlertDialog dialog = builder.setTitle(R.string.go_to)
+                .setPositiveButton(R.string.ok, null)
+                .show();
+
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mHelper == null) {
+                    dialog.dismiss();
+                    return;
+                }
+
+                String text = builder.getText();
+                int goTo = 0;
+                try {
+                    goTo = Integer.parseInt(text);
+                } catch (Exception e) {
+                    builder.setError(getString(R.string.error_invalid_number));
+                    return;
+                }
+
+                if(goTo < 0 || goTo > pages) {
+                    builder.setError(getString(R.string.error_out_of_range));
+                    return;
+                }
+
+                builder.setError(null);
+                mHelper.goTo(goTo);
+                AppHelper.hideSoftInput(dialog);
+                dialog.dismiss();
+            }
+        });
+    }
+
+    @Override
+    public void onClickSecondaryFab(FabLayout view, FloatingActionButton fab, int position) {
+        if(null == mHelper) {
+            return;
+        }
+
+        switch (position) {
+            case 0:
+                showGoToDialog();
+                break;
+            case 1:
+                mHelper.refresh();
+                break;
+        }
+
+        view.setExpanded(false);
+    }
+
+    @Override
+    public void onExpand(boolean expanded) {
+        if(null == mActionFabDrawable) {
+            return;
+        }
+
+        if(expanded) {
+            //阻止展开是测试菜单
+            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT);
+            setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT);
+            mActionFabDrawable.setDelete(ANIMATE_TIME);
+        } else {
+            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.LEFT);
+            setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, Gravity.RIGHT);
+            mActionFabDrawable.setAdd(ANIMATE_TIME);
+        }
     }
 
     public class VideoListHelper extends ContentLayout.ContentHelper<VideoInfo> {

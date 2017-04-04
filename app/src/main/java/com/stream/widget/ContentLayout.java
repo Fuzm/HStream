@@ -12,8 +12,10 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.hippo.easyrecyclerview.EasyRecyclerView;
+import com.hippo.easyrecyclerview.LayoutManagerUtils;
 import com.hippo.refreshlayout.RefreshLayout;
 import com.hippo.yorozuya.IntIdGenerator;
+import com.hippo.yorozuya.collect.IntList;
 import com.stream.hstream.R;
 
 import java.util.ArrayList;
@@ -93,6 +95,7 @@ public class ContentLayout extends FrameLayout{
         public static final int TYPE_PRE_PAGE_KEEP_POS = 2;
         public static final int TYPE_NEXT_PAGE = 3;
         public static final int TYPE_NEXT_PAGE_KEEP_POS = 4;
+        public static final int TYPE_SOMEWHERE = 5;
 
         private ArrayList<E> mData = new ArrayList<>();
 
@@ -108,6 +111,8 @@ public class ContentLayout extends FrameLayout{
 
         private RefreshLayout mRefreshLayout;
         private EasyRecyclerView mRecyclerView;
+
+        private IntList mPageDivider = new IntList();
 
         private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
             @Override
@@ -163,10 +168,14 @@ public class ContentLayout extends FrameLayout{
 
         public void onGetPageData(int taskId, List<E> data) {
 
+            int datasize = 0;
             switch (mCurrentTaskType) {
                 case TYPE_REFRESH :
-                    mStartPage = 0;
+                    mStartPage = 1;
                     mEndPage = 2;
+
+                    mPageDivider.clear();
+                    mPageDivider.add(data.size());
 
                     mData.clear();
                     mData.addAll(data);
@@ -175,6 +184,11 @@ public class ContentLayout extends FrameLayout{
                     break;
                 case TYPE_PRE_PAGE :
                 case TYPE_PRE_PAGE_KEEP_POS :
+                    datasize = data.size();
+                    for(int i=0, n=mPageDivider.size(); i<n; i++) {
+                        mPageDivider.set(i, mPageDivider.get(i)+datasize);
+                    }
+                    mPageDivider.add(0, datasize);
                     mStartPage--;
 
                     mData.addAll(0, data);
@@ -183,17 +197,87 @@ public class ContentLayout extends FrameLayout{
                     break;
                 case TYPE_NEXT_PAGE :
                 case TYPE_NEXT_PAGE_KEEP_POS :
+                    datasize = data.size();
+                    int oldDataSize = mData.size();
+                    mPageDivider.add(oldDataSize + datasize);
                     mEndPage++;
 
-                    int oldSize = mData.size();
-                    mData.addAll(oldSize, data);
-                    notifyItemRangeInserted(oldSize, data.size());
+                    mData.addAll(oldDataSize, data);
+                    notifyItemRangeInserted(oldDataSize, data.size());
 
+                    break;
+                case TYPE_SOMEWHERE:
+                    mStartPage = mCurrentTaskPage;
+                    mEndPage = mCurrentTaskPage + 1;
+
+                    mPageDivider.clear();
+                    mPageDivider.add(data.size());
+
+                    mData.clear();
+                    mData.addAll(data);
+                    notifyDataSetChanged();
+
+                    LayoutManagerUtils.scrollToPositionWithOffset(mRecyclerView.getLayoutManager(), 0, 0);
                     break;
             }
 
             mRefreshLayout.setHeaderRefreshing(false);
             mRefreshLayout.setFooterRefreshing(false);
+        }
+
+        private int getPageStart(int page) {
+            if(mStartPage == page) {
+                return 0;
+            } else {
+                return mPageDivider.get(page - mStartPage - 1);
+            }
+        }
+
+        public void goTo(int page) {
+           if(page < 0 || page > mPages) {
+               throw new IndexOutOfBoundsException("Page count is " + mPages + ", page is " + page);
+           } else {
+               if(page >= mStartPage && page < mEndPage) {
+                   int position = getPageStart(page);
+                   LayoutManagerUtils.scrollToPositionWithOffset(mRecyclerView.getLayoutManager(), position, 0);
+               } else if(page == mEndPage) {
+                   mRefreshLayout.setFooterRefreshing(false);
+                   mRefreshLayout.setHeaderRefreshing(true);
+
+                   mCurrentTaskId = mIdGenerator.nextId();
+                   mCurrentTaskPage = page;
+                   mCurrentTaskType = TYPE_SOMEWHERE;
+                   getPageData(mCurrentTaskId, mCurrentTaskPage, mCurrentTaskType);
+
+               } else {
+                   mRefreshLayout.setFooterRefreshing(false);
+                   mRefreshLayout.setHeaderRefreshing(true);
+
+                   mCurrentTaskId = mIdGenerator.nextId();
+                   mCurrentTaskPage = page;
+                   mCurrentTaskType = TYPE_SOMEWHERE;
+                   getPageData(mCurrentTaskId, mCurrentTaskPage, mCurrentTaskType);
+               }
+           }
+        }
+
+        public int getPageForPosition(int position) {
+            if(position < 0) {
+                return -1;
+            }
+
+            IntList pageDivider = mPageDivider;
+            for (int i = 0, n = pageDivider.size(); i < n; i++) {
+                if (position < pageDivider.get(i)) {
+                    return i + mStartPage;
+                }
+            }
+
+            return -1;
+        }
+
+        public int getPageForTop() {
+            return getPageForPosition(LayoutManagerUtils.getFirstVisibleItemPosition(mRecyclerView.getLayoutManager()));
         }
 
         public E getDataAt(int location){
@@ -221,6 +305,10 @@ public class ContentLayout extends FrameLayout{
         }
 
         public void firstRefresh() {
+            doRefresh();
+        }
+
+        public void refresh() {
             doRefresh();
         }
 

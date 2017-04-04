@@ -11,25 +11,52 @@
         android:layout_height="match_parent"
         android:id="@+id/fragment_content_layout" />
 
-    <android.support.design.widget.FloatingActionButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/v_go_to_dark_x24"
-        app:backgroundTint="?attr/colorAccent"
-        style="@style/Widget.Design.FloatingActionButton.Mini"/>
+    <com.stream.widget.FabLayout
+        android:id="@+id/fab_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingRight="@dimen/corner_fab_margin"
+        android:paddingBottom="@dimen/corner_fab_margin">
 
-    <android.support.design.widget.FloatingActionButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/v_refresh_dark_x24"
-        app:backgroundTint="?attr/colorAccent"
-        style="@style/Widget.Design.FloatingActionButton.Mini"/>
+        <android.support.design.widget.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/v_go_to_dark_x24"
+            app:backgroundTint="?attr/colorAccent"
+            style="@style/Widget.Design.FloatingActionButton.Mini"/>
 
-    <android.support.design.widget.FloatingActionButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:backgroundTint="?attr/colorPrimary"
-        style="@style/Widget.Design.FloatingActionButton"/>
+        <android.support.design.widget.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/v_refresh_dark_x24"
+            app:backgroundTint="?attr/colorAccent"
+            style="@style/Widget.Design.FloatingActionButton.Mini"/>
+
+        <android.support.design.widget.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:backgroundTint="?attr/colorPrimary"
+            style="@style/Widget.Design.FloatingActionButton"/>
+    </com.stream.widget.FabLayout>
+
+    <com.stream.widget.FabLayout
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingRight="@dimen/corner_fab_margin"
+        android:paddingBottom="@dimen/corner_fab_margin">
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/search_fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/v_magnify_dark_x24"
+            android:visibility="invisible"
+            android:scaleX="0"
+            android:scaleY="0"
+            style="@style/Widget.Design.FloatingActionButton"/>
+
+    </com.stream.widget.FabLayout>
 
 </FrameLayout>
 

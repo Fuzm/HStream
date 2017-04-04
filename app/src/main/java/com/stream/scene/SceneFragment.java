@@ -23,6 +23,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 
 import com.hippo.yorozuya.collect.IntList;
+import com.stream.hstream.MainActivity;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -85,6 +86,13 @@ public class SceneFragment extends Fragment {
     }
 
     protected void onSceneResult(int requestCode, int resultCode, Bundle data) {
+    }
+
+    public void setDrawerLockMode(int lockMode, int edgeGravity) {
+        FragmentActivity activity = getActivity();
+        if (activity instanceof MainActivity) {
+            ((MainActivity) activity).setDrawerLockMode(lockMode, edgeGravity);
+        }
     }
 
 }
