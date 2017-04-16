@@ -35,8 +35,8 @@ public class MainActivity extends StageActivity
 
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
 
 //        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 //        fab.setOnClickListener(new View.OnClickListener() {
@@ -126,5 +126,9 @@ public class MainActivity extends StageActivity
 
     public void setDrawerLockMode(int lockMode, int edgeGravity) {
         mDrawerLayout.setDrawerLockMode(lockMode, edgeGravity);
+    }
+
+    public void toggleDrawer(int edgeGravity) {
+        mDrawerLayout.openDrawer(edgeGravity);
     }
 }

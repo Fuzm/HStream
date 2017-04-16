@@ -37,4 +37,5 @@ dependencies {
     compile 'com.github.seven332:easyrecyclerview:0.1.1'
     compile 'com.github.seven332:refreshlayout:0.1.0'
     testCompile 'junit:junit:4.12'
+    compile 'com.android.support.test.espresso:espresso-core:2.2.2'
 }

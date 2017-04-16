@@ -10,5 +10,14 @@ import com.stream.client.HsClient;
 
 public abstract class HsCallback <E extends Fragment, T> implements HsClient.Callback<T> {
 
+    private E mFragment;
+
+    public HsCallback(E fragment) {
+        mFragment = fragment;
+    }
+
+    public E getFragment() {
+        return mFragment;
+    }
 
 }

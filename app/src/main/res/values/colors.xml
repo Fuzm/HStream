@@ -8,4 +8,17 @@
     <color name="source_text">#fff06292</color>
 
     <color name="primary_drawable_dark">#ffffffff</color>
+
+    <color name="secondary_text_default_dark">#61ffffff</color>
+    <color name="secondary_text_disabled_light">#24000000</color>
+    <color name="secondary_text_default_light">#8a000000</color>
+    <color name="secondary_text_disabled_dark">#36ffffff</color>
+
+    <!-- divider -->
+    <color name="divider">#20000000</color>
+    <color name="divider_dark">#20ffffff</color>
+
+    <!-- video -->
+    <color name="time_text_light">#ffffff</color>
+    <color name="video_backgroun_dark">#000000</color>
 </resources>

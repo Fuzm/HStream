@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:orientation="vertical"
     android:background="@drawable/card_grey_no_padding_2dp">
 
-    <com.stream.widget.TileThumb
-        xmlns:app="http://schemas.android.com/apk/res-auto"
+    <com.stream.widget.LoadImageView
         android:id="@+id/thumb"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="200dp"
         android:scaleType="centerCrop"
         android:foreground="@drawable/tile_background"
         android:minHeight="200dp"
@@ -18,13 +18,11 @@
     <TextView
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/title"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|right"
-        android:layout_marginRight="2dp"
-        android:textSize="10dp"
-        android:textColor="@android:color/white"
+        android:padding="2dp"
+        android:textSize="18dp"
         android:textStyle="bold"
+        android:background="@color/primary_drawable_dark"
         tools:ignore="SpUsage"/>
-
-</FrameLayout>
+</LinearLayout>

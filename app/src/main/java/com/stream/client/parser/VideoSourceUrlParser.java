@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * Created by Fuzm on 2017/3/25 0025.
  */
 
-public class VideoDetailUrlParser {
+public class VideoSourceUrlParser {
 
     public static final Pattern URL_PATTERN = Pattern.compile("https?://(?:"
             + HsUrl.DOMAIN_STREAM + ")/([\\w+\\-+]*)");

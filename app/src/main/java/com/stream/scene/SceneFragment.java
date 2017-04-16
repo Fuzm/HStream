@@ -95,4 +95,11 @@ public class SceneFragment extends Fragment {
         }
     }
 
+    public void toggleDrawer(int edgeGravity) {
+        FragmentActivity activity = getActivity();
+        if(activity instanceof MainActivity) {
+            ((MainActivity) activity).toggleDrawer(edgeGravity);
+        }
+    }
+
 }

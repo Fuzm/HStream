@@ -1,5 +1,7 @@
 package com.stream.hstream;
 
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.PointF;
@@ -8,33 +10,55 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.os.PersistableBundle;
+import android.os.PowerManager;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.MediaController;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 import android.widget.VideoView;
+
+import com.stream.client.parser.VideoSourceUrlParser;
+import com.stream.util.LoadImageHelper;
+import com.stream.widget.FloatingPercentView;
+import com.stream.widget.StreamVideoView;
 
 /**
  * Created by Fuzm on 2017/3/26 0026.
  */
 
-public class VideoPlayActivity extends AppCompatActivity  {
+public class VideoPlayActivity extends AppCompatActivity implements View.OnTouchListener{
 
     public static final String TAG = VideoPlayActivity.class.getSimpleName();
+    public static final String KEY_VIDEO_TITLE = "video_title";
+    public static final String KEY_VIDEO_THUMB = "video_thumb";
     public static final String KEY_VIDEO_URL = "video_url";
+    public static final String KEY_SAVE_POSITION = "save_position";
 
-    private VideoView mVideoView;
-    private MediaController mMediaController;
+    private String mVideoTitle;
+    private String mVideoThumb;
     private String mVideoUrl;
-    private PointF mOriginPoint;
-    private PointF mCurrentPoint;
+    private StreamVideoView mStreamVideoView;
     private GestureDetector mGestureDetector;
+    private FloatingPercentView mPercentView;
+
+    private VideoGestureListener mGestureListener;
+
+    private int mSavePosition = 0;
 
     private void onInit() {
         Intent intent = getIntent();
@@ -42,97 +66,83 @@ public class VideoPlayActivity extends AppCompatActivity  {
             return;
         }
 
+        mVideoTitle = intent.getStringExtra(KEY_VIDEO_TITLE);
+        mVideoThumb = intent.getStringExtra(KEY_VIDEO_THUMB);
         mVideoUrl = intent.getStringExtra(KEY_VIDEO_URL);
     }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
 
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+        if(getRequestedOrientation() != ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
+            finish();
+            return;
+        }
+
+        super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Window w = getWindow();
             w.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,
                     WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
             w.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
                     WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            w.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
-
-        setContentView(R.layout.activity_video_play);
 
         onInit();
-
-        mVideoView = (VideoView) findViewById(R.id.videoView);
-        mMediaController = new MediaController(this);
-        mMediaController.show(0);
-        mVideoView.setMediaController(mMediaController);
-        if(mVideoUrl != null && !"".equals(mVideoUrl)) {
-            mVideoView.setVideoURI(Uri.parse(mVideoUrl));
+        setContentView(R.layout.activity_video_play);
+        if(savedInstanceState != null) {
+            mSavePosition = savedInstanceState.getInt(KEY_SAVE_POSITION);
         }
 
-        mVideoView.setLongClickable(true);
-        //mVideoView.setOnTouchListener(this);
+        mStreamVideoView = (StreamVideoView) findViewById(R.id.stream_video_view);
+        mStreamVideoView.setTitle(mVideoTitle);
+        mStreamVideoView.addBackButtonListener(new StreamVideoView.OnBackClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+        mStreamVideoView.setOnTouchListener(this);
+        // load background image
+        mStreamVideoView.loadBackground(mVideoThumb, mVideoThumb);
 
-        mGestureDetector = new GestureDetector(this, new VideoGestureListener());
-//        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-//                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-//        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-//        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-//        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-//        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-//        mVideoView.setLayoutParams(layoutParams);
+        mPercentView = (FloatingPercentView) findViewById(R.id.percent_view);
+        mGestureListener = new VideoGestureListener();
+        mGestureDetector = new GestureDetector(this, mGestureListener);
+
+        if(mVideoUrl != null && !"".equals(mVideoUrl)) {
+            mStreamVideoView.setVideoPath(mVideoUrl);
+            mStreamVideoView.start();
+        }
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
 
-        mVideoView.start();
-        mVideoView.setFocusable(true);
+        mSavePosition = mStreamVideoView.getCurrentPosition();
+        outState.putInt(KEY_SAVE_POSITION, mSavePosition);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
 
-        if(mVideoView != null) {
-            mVideoView = null;
-            mMediaController = null;
+        mStreamVideoView.release();
+    }
+
+    private void checkEdgeFlag(MotionEvent e) {
+        float x = e.getX();
+        int width = VideoPlayActivity.this.getWindow().getDecorView().getWidth();
+
+        if(x < width/2) {
+            e.setEdgeFlags(MotionEvent.EDGE_LEFT);
+        } else {
+            e.setEdgeFlags(MotionEvent.EDGE_RIGHT);
         }
     }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return mGestureDetector.onTouchEvent(event);
-    }
-
-//    @Override
-//    public boolean onTouch(View v, MotionEvent event) {
-//        Log.d(TAG, "touch enter");
-//        return mGestureDetector.onTouchEvent(event);
-//
-//        /*switch (event.getAction()) {
-//            case MotionEvent.ACTION_DOWN :
-//                mOriginPoint = new PointF(event.getX(), event.getY());
-//                break;
-//            case MotionEvent.ACTION_MOVE :
-//                mCurrentPoint = new PointF(event.getX(), event.getY());
-//
-//                Log.d(TAG, "Edge flag: " + event.getEdgeFlags());
-//                if(event.getEdgeFlags() == MotionEvent.EDGE_RIGHT) {
-//                    float distance = mCurrentPoint.y - mOriginPoint.y;
-//                    Log.d(TAG, "move distance: " + distance);
-//                    if(distance > 0 && Math.abs(distance) > 10) {
-//                        setAudio(10);
-//                    } else if(distance < 0 && Math.abs(distance) > 10){
-//                        setAudio(-10);
-//                    }
-//                }
-//                break;
-//        }
-//
-//        return false;*/
-//    }
 
     //改变屏幕亮度
     public void setLightness(float lightness){
@@ -140,10 +150,13 @@ public class VideoPlayActivity extends AppCompatActivity  {
         layoutParams.screenBrightness =layoutParams.screenBrightness+lightness/255f;
         if(layoutParams.screenBrightness>1){
             layoutParams.screenBrightness=1;
-        }else if(layoutParams.screenBrightness<0.2){
-            layoutParams.screenBrightness=0.2f;
+        }else if(layoutParams.screenBrightness<0.0){
+            layoutParams.screenBrightness=0.0f;
         }
         getWindow().setAttributes(layoutParams);
+
+        mPercentView.setPercent(layoutParams.screenBrightness);
+        mPercentView.showByType(FloatingPercentView.TYPE_LIGHT);
     }
 
     //加减音量
@@ -155,16 +168,42 @@ public class VideoPlayActivity extends AppCompatActivity  {
         int maxVolume =audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         currentVolume = currentVolume + volume;
 
-        Log.d(TAG, "current: " + currentVolume + ", max :" + maxVolume + ", add :" + volume);
+        //Log.d(TAG, "current: " + currentVolume + ", max :" + maxVolume + ", add :" + volume);
 
         if(currentVolume >= 0 && currentVolume<=maxVolume){
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, AudioManager.FLAG_PLAY_SOUND);
+
+            mPercentView.setPercent(currentVolume / (float) maxVolume);
+            mPercentView.showByType(FloatingPercentView.TYPE_VOLUMN);
         }else {
             return;
         }
     }
 
+    public void speedVideo(int mesc) {
+        int pos = mStreamVideoView.getCurrentPosition();
+        pos += mesc; // milliseconds
+        mStreamVideoView.seekTo(pos);
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                checkEdgeFlag(event);
+                break;
+            case MotionEvent.ACTION_UP:
+                mGestureListener.clearStatus();
+                break;
+        }
+
+        return mGestureDetector.onTouchEvent(event);
+    }
+
     public class VideoGestureListener implements GestureDetector.OnGestureListener {
+
+        private boolean mUpAndDown = false;
+        private boolean mLeftAndRight = false;
 
         @Override
         public boolean onDown(MotionEvent e) {
@@ -173,7 +212,6 @@ public class VideoPlayActivity extends AppCompatActivity  {
 
         @Override
         public void onShowPress(MotionEvent e) {
-
         }
 
         @Override
@@ -183,13 +221,31 @@ public class VideoPlayActivity extends AppCompatActivity  {
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            Log.d(TAG, "edge flag: " + (e1.getEdgeFlags()&MotionEvent.EDGE_LEFT) + ", distance y :" + distanceY);
-            if(distanceY > 0 && Math.abs(distanceY) > 5 ) {
-                setAudio(1);
-            } else if(distanceY < 0 && Math.abs(distanceY) > 5) {
-                setAudio(-1);
+            //Log.d(TAG, "distance X: " + distanceX + ", distance Y :" + distanceY);
+            if(!mLeftAndRight && (mUpAndDown || Math.abs(distanceY) > Math.abs(distanceX))) {
+                mUpAndDown = true;
+                if(distanceY > 0 && Math.abs(distanceY) > 2) {
+                    if (e1.getEdgeFlags() == MotionEvent.EDGE_LEFT) {
+                        setLightness(5);
+                    } else if (e1.getEdgeFlags() == MotionEvent.EDGE_RIGHT) {
+                        setAudio(1);
+                    }
+                } else if(distanceY < 0 && Math.abs(distanceY) > 2 && Math.abs(distanceY) > Math.abs(distanceX)) {
+                    if (e1.getEdgeFlags() == MotionEvent.EDGE_LEFT) {
+                        setLightness(-5);
+                    } else if (e1.getEdgeFlags() == MotionEvent.EDGE_RIGHT) {
+                        setAudio(-1);
+                    }
+                }
+            } else {
+                mLeftAndRight = true;
+                //control progress
+                if(distanceX > 0 && Math.abs(distanceX) > 2) {
+                    speedVideo(-15000);
+                } else if(distanceX < 0 && Math.abs(distanceX) > 2) {
+                    speedVideo(15000);
+                }
             }
-
             return false;
         }
 
@@ -201,6 +257,11 @@ public class VideoPlayActivity extends AppCompatActivity  {
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
             return false;
+        }
+
+        public void clearStatus(){
+            mUpAndDown = false;
+            mLeftAndRight = false;
         }
     }
 

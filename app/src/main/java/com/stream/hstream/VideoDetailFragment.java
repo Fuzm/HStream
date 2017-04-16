@@ -3,32 +3,23 @@ package com.stream.hstream;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
 import com.stream.client.HsClient;
 import com.stream.client.HsRequest;
-import com.stream.client.data.ListUrlBuilder;
-import com.stream.client.data.VideoDetailInfo;
+import com.stream.client.data.VideoSourceInfo;
 import com.stream.client.data.VideoInfo;
-import com.stream.client.parser.VideoDetailParser;
+import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoUrlParser;
-import com.stream.scene.Announcer;
 import com.stream.scene.SceneFragment;
 import com.stream.widget.LoadImageView;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,44 +89,56 @@ public class VideoDetailFragment extends SceneFragment implements AdapterView.On
     private void requiredDetailInfo() {
         HsRequest request = new HsRequest();
         request.setMethod(HsClient.METHOD_GET_VIDEO_DETAIL);
-        request.setCallback(new VideoDetailFragment.VideoDetailListener());
+        request.setCallback(new VideoDetailFragment.VideoDetailListener(this));
         request.setArgs(mVideoInfo.url);
         mClient.execute(request);
     }
 
-    private void onRequiredDetailSuccess(VideoDetailParser.Result result) {
+    private void onRequiredDetailSuccess(VideoSourceParser.Result result) {
         mData.clear();
-        for(VideoDetailInfo info : result.mVideoDetailInfoList) {
+        for(VideoSourceInfo info : result.mVideoSourceInfoList) {
             mData.add(info.parseMap());
         }
         mSimpleAdapter.notifyDataSetChanged();
     }
 
-    private void requiredVideoUrl(String infoUrl) {
-        HsRequest request = new HsRequest();
-        request.setMethod(HsClient.METHOD_GET_VIDEO_URL);
-        request.setCallback(new VideoDetailFragment.VideoUrlListener());
-        request.setArgs(infoUrl);
-        mClient.execute(request);
-    }
+//    private void requiredVideoUrl(String infoUrl) {
+//        HsRequest request = new HsRequest();
+//        request.setMethod(HsClient.METHOD_GET_VIDEO_URL);
+//        request.setCallback(new VideoDetailFragment.VideoUrlListener());
+//        request.setArgs(infoUrl);
+//        mClient.execute(request);
+//    }
 
-    private void onRequiredUrlSuccess(VideoUrlParser.Result result) {
-        Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
-        intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, result.url);
-        startActivity(intent);
-    }
+//    private void onRequiredUrlSuccess(VideoUrlParser.Result result) {
+//        Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
+//        intent.putExtra(VideoPlayActivity.KEY_VIDEO_TITLE, mVideoInfo.title);
+//        intent.putExtra(VideoPlayActivity.KEY_VIDEO_THUMB, mVideoInfo.thumb);
+//        intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, result.url);
+//        startActivity(intent);
+//    }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Map info = (Map) mData.get(position);
-        requiredVideoUrl((String) info.get("url"));
+        //requiredVideoUrl((String) info.get("url"));
+
+        Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
+        intent.putExtra(VideoPlayActivity.KEY_VIDEO_TITLE, mVideoInfo.title);
+        intent.putExtra(VideoPlayActivity.KEY_VIDEO_THUMB, mVideoInfo.thumb);
+        intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, (String) info.get("videoUrl"));
+        startActivity(intent);
     }
 
-    public class VideoDetailListener extends HsCallback<VideoDetailFragment, VideoDetailParser.Result> {
+    public class VideoDetailListener extends HsCallback<VideoDetailFragment, VideoSourceParser.Result> {
+
+        public VideoDetailListener(VideoDetailFragment fragment) {
+            super(fragment);
+        }
 
         @Override
-        public void onSuccess(VideoDetailParser.Result result) {
-            VideoDetailFragment.this.onRequiredDetailSuccess(result);
+        public void onSuccess(VideoSourceParser.Result result) {
+           getFragment().onRequiredDetailSuccess(result);
         }
 
         @Override
@@ -149,21 +152,21 @@ public class VideoDetailFragment extends SceneFragment implements AdapterView.On
         }
     }
 
-    public class VideoUrlListener extends HsCallback<VideoDetailFragment, VideoUrlParser.Result> {
-
-        @Override
-        public void onSuccess(VideoUrlParser.Result result) {
-            VideoDetailFragment.this.onRequiredUrlSuccess(result);
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-
-        }
-
-        @Override
-        public void onCancel() {
-
-        }
-    }
+//    public class VideoUrlListener extends HsCallback<VideoDetailFragment, VideoUrlParser.Result> {
+//
+//        @Override
+//        public void onSuccess(VideoUrlParser.Result result) {
+//            VideoDetailFragment.this.onRequiredUrlSuccess(result);
+//        }
+//
+//        @Override
+//        public void onFailure(Exception e) {
+//
+//        }
+//
+//        @Override
+//        public void onCancel() {
+//
+//        }
+//    }
 }

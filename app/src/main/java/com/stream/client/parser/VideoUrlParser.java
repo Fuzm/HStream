@@ -1,16 +1,9 @@
 package com.stream.client.parser;
 
-import android.util.Log;
-
-import com.stream.client.data.VideoDetailInfo;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Fuzm on 2017/3/26 0026.

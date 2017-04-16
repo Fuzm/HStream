@@ -1,9 +1,6 @@
 package com.stream.client.parser;
 
-import android.os.Parcelable;
-
-import com.stream.client.data.VideoDetailInfo;
-import com.stream.client.data.VideoInfo;
+import com.stream.client.data.VideoSourceInfo;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -17,12 +14,12 @@ import java.util.List;
  * Created by Fuzm on 2017/3/25 0025.
  */
 
-public class VideoDetailParser {
+public class VideoSourceParser {
 
     private static final String FILE_TAG = "file:\"";
 
     public static class Result {
-        public List<VideoDetailInfo> mVideoDetailInfoList;
+        public List<VideoSourceInfo> mVideoSourceInfoList;
     }
 
     public static Result parse(String body) {
@@ -30,14 +27,14 @@ public class VideoDetailParser {
         Document doc = Jsoup.parse(body);
 
         try {
-            List<VideoDetailInfo> list = new ArrayList<>();
+            List<VideoSourceInfo> list = new ArrayList<>();
             Element root = doc.getElementById("tabs-1");
             Elements sources = root.child(0).children();
             for(Element e: sources) {
                 list.add(parseDetail(e, root));
             }
 
-            result.mVideoDetailInfoList = list;
+            result.mVideoSourceInfoList = list;
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
@@ -46,7 +43,7 @@ public class VideoDetailParser {
         return result;
     }
 
-    private static VideoDetailInfo parseDetail(Element element, Element root) {
+    private static VideoSourceInfo parseDetail(Element element, Element root) {
         String name = element.child(0).html();
         String id = element.child(0).attr("href");
         if(id.startsWith("#")) {
@@ -56,7 +53,7 @@ public class VideoDetailParser {
         Element iframe = root.getElementById(id).child(0).child(0);
         String url = iframe.attr("src");
 
-        VideoDetailInfo info = new VideoDetailInfo();
+        VideoSourceInfo info = new VideoSourceInfo();
         info.name = name;
         info.url = url;
         return info;

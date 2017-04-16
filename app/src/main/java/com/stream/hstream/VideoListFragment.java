@@ -2,50 +2,53 @@ package com.stream.hstream;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Parcelable;
-import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
+import android.text.style.ImageSpan;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.stream.client.HsClient;
 import com.stream.client.HsRequest;
 import com.stream.client.data.ListUrlBuilder;
 import com.stream.client.data.VideoInfo;
+import com.stream.client.data.VideoSourceInfo;
 import com.stream.client.parser.VideoListParser;
+import com.stream.client.parser.VideoSourceParser;
 import com.stream.drawable.AddDeleteDrawable;
+import com.stream.drawable.DrawerArrowDrawable;
 import com.stream.scene.Announcer;
 import com.stream.scene.SceneFragment;
 import com.stream.util.AppHelper;
+import com.stream.util.DrawableManager;
 import com.stream.widget.ContentLayout;
 import com.stream.widget.EditTextDialogBuilder;
 import com.stream.widget.FabLayout;
+import com.stream.widget.SearchBar;
 import com.stream.widget.VideoAdapter;
-import com.stream.widget.VideoHolder;
-
-import java.util.List;
-import java.util.jar.Pack200;
 
 /**
  * Created by Fuzm on 2017/3/24 0024.
  */
 
-public class VideoListFragment extends SceneFragment implements EasyRecyclerView.OnItemClickListener, FabLayout.OnClickFabListener,
-                                        FabLayout.OnExpandListener{
+public class VideoListFragment extends SceneFragment implements EasyRecyclerView.OnItemClickListener,
+        FabLayout.OnClickFabListener, FabLayout.OnExpandListener, SearchBar.Helper,
+        SearchBar.OnStateChangeListener {
 
     private static final String TAG = VideoListFragment.class.getSimpleName();
 
@@ -55,6 +58,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     private static final long ANIMATE_TIME = 300L;
 
     private ContentLayout mContentLayout;
+    private SearchBar mSearchBar;
     private EasyRecyclerView mRecyclerView;
     private VideoListAdapter mAdapter;
     private VideoListHelper mHelper;
@@ -63,8 +67,11 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     private FloatingActionButton mSearchFab;
     private FabLayout mFabLayout;
     private AddDeleteDrawable mActionFabDrawable;
+    private DrawerArrowDrawable mLeftDrawable;
+    private AddDeleteDrawable mRightDrawable;
 
     private boolean mHasFirstRefresh = false;
+    private VideoInfo mClickVideo;
 
     private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
         @Override
@@ -88,7 +95,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
 
     private void onRestore(Bundle savedInstanceState) {
         mHasFirstRefresh = savedInstanceState.getBoolean(KEY_HAS_FIRST_REFRESH);
-        //mUrlBuilder = savedInstanceState.getParcelable(KEY_LIST_URL_BUILDER);
+        mUrlBuilder = savedInstanceState.getParcelable(KEY_LIST_URL_BUILDER);
     }
 
     @Override
@@ -96,7 +103,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         super.onSaveInstanceState(outState);
 
         outState.putBoolean(KEY_HAS_FIRST_REFRESH, mHasFirstRefresh);
-        //outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder);
+        outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder);
     }
 
     @Nullable
@@ -131,7 +138,16 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         mFabLayout.getPrimaryFab().setImageDrawable(mActionFabDrawable);
 
         mSearchFab = (FloatingActionButton) view.findViewById(R.id.search_fab);
+        mSearchBar = (SearchBar) view.findViewById(R.id.search_tool_bar);
 
+        mLeftDrawable = new DrawerArrowDrawable(getContext());
+        mRightDrawable = new AddDeleteDrawable(getContext());
+        mSearchBar.setLeftDrawable(mLeftDrawable);
+        mSearchBar.setRightDrawable(mRightDrawable);
+        mSearchBar.setHelper(this);
+        mSearchBar.setTitle(getTitleForUrlBuilder());
+        setSearchBarHint(getContext(), mSearchBar);
+        mSearchBar.setOnStateChangeListener(this);
 
         if(!mHasFirstRefresh) {
             mHasFirstRefresh = true;
@@ -141,9 +157,24 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         return view;
     }
 
+    private void setSearchBarHint(Context context, SearchBar searchBar) {
+        Resources resources = context.getResources();
+        Drawable searchImage = DrawableManager.getDrawable(context, R.drawable.v_magnify_x24);
+        SpannableStringBuilder ssb = new SpannableStringBuilder("   ");
+        ssb.append(resources.getString(R.string.gallery_list_search_bar_hint_exhentai));
+        int textSize = (int) (searchBar.getEditTextTextSize() * 1.25);
+        if (searchImage != null) {
+            searchImage.setBounds(0, 0, textSize, textSize);
+            ssb.setSpan(new ImageSpan(searchImage), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        searchBar.setEditTextHint(ssb);
+    }
+
     private void onGetVideoListSuccess(int taskId, VideoListParser.Result result) {
-        mHelper.setPages(result.pages);
-        mHelper.onGetPageData(taskId, result.mVideoInfoList);
+        if(mHelper != null && mHelper.isCurrentTask(taskId)) {
+            mHelper.setPages(taskId, result.pages);
+            mHelper.onGetPageData(taskId, result.mVideoInfoList);
+        }
     }
 
     private void onGetVideoListFail(int taskId, Exception e) {
@@ -156,15 +187,35 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
             return false;
         }
 
-        VideoInfo info = mHelper.getDataAt(position);
-
-        Bundle args = new Bundle();
-        args.putParcelable(VideoDetailFragment.KEY_DETAIL_INFO, info);
-
-        Announcer announcer = new Announcer(VideoDetailFragment.class);
-        announcer.setArgs(args);
-        startScene(announcer);
+        mClickVideo = mHelper.getDataAt(position);
+        requiredDetailInfo();
+//
+//        Bundle args = new Bundle();
+//        args.putParcelable(VideoDetailFragment.KEY_DETAIL_INFO, info);
+//
+//        Announcer announcer = new Announcer(VideoDetailFragment.class);
+//        announcer.setArgs(args);
+//        startScene(announcer);
         return true;
+    }
+
+    private void requiredDetailInfo() {
+        HsRequest request = new HsRequest();
+        request.setMethod(HsClient.METHOD_GET_VIDEO_DETAIL);
+        request.setCallback(new VideoListFragment.VideoDetailListener(this));
+        request.setArgs(mClickVideo.url);
+        mClient.execute(request);
+    }
+
+    private void onRequiredDetailSuccess(VideoSourceParser.Result result) {
+        VideoSourceInfo videoSourceInfo = result.mVideoSourceInfoList.get(0);
+        if(videoSourceInfo != null) {
+            Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
+            intent.putExtra(VideoPlayActivity.KEY_VIDEO_TITLE, mClickVideo.title);
+            intent.putExtra(VideoPlayActivity.KEY_VIDEO_THUMB, mClickVideo.thumb);
+            intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, videoSourceInfo.videoUrl);
+            startActivity(intent);
+        }
     }
 
     @Override
@@ -252,15 +303,79 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
     }
 
+    @Override
+    public void onClickLeftIcon() {
+        if(null == mSearchBar) {
+            return;
+        }
+
+        if(mSearchBar.getState() == SearchBar.STATE_NORMAL) {
+            toggleDrawer(Gravity.LEFT);
+        } else {
+            mSearchBar.setState(SearchBar.STATE_NORMAL, true);
+        }
+    }
+
+    @Override
+    public void onClickRightIcon() {
+        if(mSearchBar.getState() == SearchBar.STATE_SEARCH) {
+            mSearchBar.setText("");
+        }
+    }
+
+    @Override
+    public void onClickTitle() {
+        mSearchBar.setState(SearchBar.STATE_SEARCH, true);
+    }
+
+    @Override
+    public void onApplySearch(String query) {
+        mUrlBuilder.reset();
+        mUrlBuilder.setKeyword(query);
+        mHelper.refresh();
+
+        mSearchBar.setTitle(getTitleForUrlBuilder());
+        mSearchBar.setState(SearchBar.STATE_NORMAL, true);
+    }
+
+    private String getTitleForUrlBuilder() {
+        String keyword = mUrlBuilder.getKeyword();
+
+        if(TextUtils.isEmpty(keyword)) {
+            return getResources().getString(R.string.app_name);
+        } else {
+            return keyword;
+        }
+    }
+
+    @Override
+    public void onStateChange(SearchBar searchBar, int newState, int oldState, boolean animation) {
+        if(mLeftDrawable == null || mRightDrawable == null) {
+            return;
+        }
+
+        switch (oldState) {
+            case SearchBar.STATE_NORMAL:
+                mLeftDrawable.setArrow(animation ? ANIMATE_TIME : 0);
+                mRightDrawable.setDelete(animation ? ANIMATE_TIME : 0);
+                break;
+            case SearchBar.STATE_SEARCH:
+                mLeftDrawable.setMenu(animation ? ANIMATE_TIME : 0);
+                mRightDrawable.setAdd(animation ? ANIMATE_TIME : 0);
+                break;
+        }
+    }
+
     public class VideoListHelper extends ContentLayout.ContentHelper<VideoInfo> {
 
         @Override
         public void getPageData(int taskId, int page, int type) {
+            //Log.d(TAG, "query page :" + page);
             mUrlBuilder.setPageIndex(page);
             String url = mUrlBuilder.build();
             HsRequest request = new HsRequest();
             request.setMethod(HsClient.METHOD_GET_VIDEO_LIST);
-            request.setCallback(new VideoListListener(getContext(), taskId));
+            request.setCallback(new VideoListListener(getContext(), VideoListFragment.this, taskId));
             request.setArgs(url);
             mClient.execute(request);
         }
@@ -301,18 +416,41 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
 
         private final int mTaskId;
 
-        public VideoListListener(Context context, int taskId) {
+        public VideoListListener(Context context, VideoListFragment fragment, int taskId) {
+            super(fragment);
             mTaskId = taskId;
         }
 
         @Override
         public void onSuccess(VideoListParser.Result result) {
-            VideoListFragment.this.onGetVideoListSuccess(mTaskId, result);
+            getFragment().onGetVideoListSuccess(mTaskId, result);
         }
 
         @Override
         public void onFailure(Exception e) {
-            VideoListFragment.this.onGetVideoListFail(mTaskId, e);
+            getFragment().onGetVideoListFail(mTaskId, e);
+        }
+
+        @Override
+        public void onCancel() {
+
+        }
+    }
+
+    public class VideoDetailListener extends HsCallback<VideoListFragment, VideoSourceParser.Result> {
+
+        public VideoDetailListener(VideoListFragment fragment) {
+            super(fragment);
+        }
+
+        @Override
+        public void onSuccess(VideoSourceParser.Result result) {
+            getFragment().onRequiredDetailSuccess(result);
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+
         }
 
         @Override

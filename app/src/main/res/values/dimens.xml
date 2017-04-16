@@ -23,4 +23,37 @@
     <dimen name="add_thickness">2dp</dimen>
 
     <dimen name="abc_dialog_padding_top_material">18dp</dimen>
+
+    <!-- Text size -->
+    <dimen name="text_super_large">24sp</dimen>
+    <dimen name="text_large">22sp</dimen>
+    <dimen name="text_little_large">20sp</dimen>
+    <dimen name="text_medium">18sp</dimen>
+    <dimen name="text_little_small">16sp</dimen>
+    <dimen name="text_small">14sp</dimen>
+    <dimen name="text_super_small">12sp</dimen>
+
+    <!-- 8dp - 4dp, 4dp for card padding -->
+    <dimen name="gallery_search_bar_margin_h">4dp</dimen>
+    <!-- 12dp - 4dp, 4dp for card padding -->
+    <dimen name="gallery_search_bar_margin_v">8dp</dimen>
+
+    <!-- 4dp - 4dp, 4dp for card padding -->
+    <dimen name="search_layout_interval">0dp</dimen>
+    <!-- 8dp - 4dp, 4dp for card padding -->
+    <dimen name="search_layout_margin_h">4dp</dimen>
+    <!-- 8dp - 4dp, 4dp for card padding -->
+    <dimen name="search_layout_margin_v">4dp</dimen>
+
+    <!-- DrawerArrowDrawable -->
+    <dimen name="dad_drawable_size">24dp</dimen>
+    <dimen name="dad_bar_size">18dp</dimen>
+    <dimen name="dad_top_bottom_bar_arrow_size">11.31dp</dimen>
+    <dimen name="dad_thickness">2dp</dimen>
+    <dimen name="dad_gap_between_bars">3dp</dimen>
+    <dimen name="dad_middle_bar_arrow_size">16dp</dimen>
+
+    <!-- PlayPauseDrawable -->
+    <dimen name="ppd_drawable_size">24dp</dimen>
+
 </resources>

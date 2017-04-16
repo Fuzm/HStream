@@ -25,5 +25,8 @@
     <string name="error_invalid_number">Invalid number</string>
     <string name="error_out_of_range">Out of range</string>
 
+    <!-- Gallery List -->
+    <string name="gallery_list_search_bar_hint_exhentai">Search HStream</string>
 
+x
 </resources>

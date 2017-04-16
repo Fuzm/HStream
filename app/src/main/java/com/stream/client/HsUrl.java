@@ -9,6 +9,7 @@ public class HsUrl {
     public static final String DOMAIN_STREAM = "hentaistream.com";
     public static final String HOST_STREAM = "http://hentaistream.com/";
     public static final String PAGE_STREAM = "page/";
+    public static final String SEARCH_STREAM = "?s=";
 
     public static String getHost() {
         return HOST_STREAM;

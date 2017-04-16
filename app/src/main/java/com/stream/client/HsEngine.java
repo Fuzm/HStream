@@ -1,8 +1,11 @@
 package com.stream.client;
 
-import com.stream.client.parser.VideoDetailParser;
+import com.stream.client.data.VideoSourceInfo;
+import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoListParser;
 import com.stream.client.parser.VideoUrlParser;
+
+import java.util.Collections;
 
 import okhttp3.Call;
 import okhttp3.Headers;
@@ -38,14 +41,20 @@ public class HsEngine {
 
             result = VideoListParser.parse(body);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
+            if(null !=body && body.contains("No episodes found")) {
+                result.pages = 0;
+                result.mVideoInfoList = Collections.emptyList();
+                return result;
+            } else {
+                e.printStackTrace();
+                throw e;
+            }
         }
 
         return result;
     }
 
-    public static VideoDetailParser.Result getVideoDetail(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
+    public static VideoSourceParser.Result getVideoDetail(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
         Request request = new EhRequestBuilder(url).addHeader("Connection", "close").build();
         Call call = okHttpClient.newCall(request);
 
@@ -56,7 +65,7 @@ public class HsEngine {
         String body = null;
         Headers headers = null;
         int code = -1;
-        VideoDetailParser.Result result = null;
+        VideoSourceParser.Result result = null;
 
         try {
             Response response = call.execute();
@@ -64,16 +73,21 @@ public class HsEngine {
             headers = response.headers();
             body = response.body().string();
 
-            result = VideoDetailParser.parse(body);
+            result = VideoSourceParser.parse(body);
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
         }
 
+        for(VideoSourceInfo info: result.mVideoSourceInfoList) {
+            VideoUrlParser.Result urlResult = getVideoUrl(task, okHttpClient, info.url);
+            info.videoUrl = urlResult.url;
+        }
+
         return result;
     }
 
-    public static VideoUrlParser.Result getVideoUrl(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
+    private static VideoUrlParser.Result getVideoUrl(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
         Request request = new EhRequestBuilder(url).addHeader("Connection", "close").build();
         Call call = okHttpClient.newCall(request);
 

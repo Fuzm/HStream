@@ -37,8 +37,11 @@ public class VideoListParser {
             Result result = new Result();
             try {
                 Element element = d.getElementById("wp_page_numbers");
-                int pages = parsePages(element);
-                result.pages = pages;
+                if(element != null) {
+                    result.pages = parsePages(element);
+                } else {
+                    result.pages = 0;
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 result.pages = 0;
@@ -46,7 +49,7 @@ public class VideoListParser {
 
             try {
                 List<VideoInfo> infos = new ArrayList<>();
-                Elements elements = d.getElementById("lastesteps_id").children();
+                Elements elements = d.getElementsByClass("content").get(0).children();
                 for(Element e : elements) {
                     String id = e.attr("id");
                     if(null != id && id.startsWith("post-")) {
@@ -66,12 +69,12 @@ public class VideoListParser {
             String thumb = e.child(0).child(0).child(0).attr("src");
             String title = e.child(0).child(0).child(0).attr("title");
 
-            VideoDetailUrlParser.Result result = VideoDetailUrlParser.parse(url);
-            if (null == result) {
-                return null;
-            }
+//            VideoSourceUrlParser.Result result = VideoSourceUrlParser.parse(url);
+//            if (null == result) {
+//                return null;
+//            }
 
-            info.token = result.token;
+            info.token = thumb;
             info.title = title;
             info.thumb = thumb;
             info.url = url;
@@ -80,7 +83,9 @@ public class VideoListParser {
         }
 
         private static int parsePages(Element e) {
-            String page = e.getElementsByClass("first_last_page").last().child(0).html();
+            String[] pageInfo = e.getElementsByClass("page_info").last().html().split(" ");
+            //String page = e.getElementsByClass("first_last_page").last().child(0).html();
+            String page = pageInfo[pageInfo.length-1];
             if(null != page && !"".equals(page)) {
                 return Integer.parseInt(page);
             } else {
@@ -127,7 +132,7 @@ public class VideoListParser {
             String thumb = e.child(0).child(0).attr("src");
             String title = e.child(0).child(0).attr("title");
 
-            VideoDetailUrlParser.Result result = VideoDetailUrlParser.parse(url);
+            VideoSourceUrlParser.Result result = VideoSourceUrlParser.parse(url);
             if (null == result) {
                 return null;
             }
