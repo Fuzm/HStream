@@ -1,5 +1,6 @@
 package com.stream.client;
 
+import com.stream.client.data.VideoInfo;
 import com.stream.client.data.VideoSourceInfo;
 import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoListParser;
@@ -50,6 +51,11 @@ public class HsEngine {
                 throw e;
             }
         }
+
+//        for(VideoInfo info: result.mVideoInfoList) {
+//            VideoSourceParser.Result sourceResult = getVideoDetail(task, okHttpClient, info.url);
+//            info.mSourceInfoList = sourceResult.mVideoSourceInfoList;
+//        }
 
         return result;
     }

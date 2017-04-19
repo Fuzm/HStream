@@ -53,16 +53,17 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoHolder> {
 
     @Override
     public VideoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return new VideoHolder(mContext, mInflater.inflate(R.layout.item_video_list, parent, false));
+        return new VideoHolder(mContext, mInflater.inflate(R.layout.item_video_grid, parent, false));
     }
 
     @Override
     public void onBindViewHolder(VideoHolder holder, int position) {
         VideoInfo videoInfo = getDataAt(position);
 
-        holder.title.setText(videoInfo.title);
-        holder.thumb.load(videoInfo.token, videoInfo.thumb);
-        holder.setSourceUrl(videoInfo.url);
+        holder.setTitle(videoInfo.title);
+        holder.setThumb(videoInfo.token, videoInfo.thumb);
+        holder.requiredSourceInfo(videoInfo.url);
+        //holder.setSourceUrl(videoInfo.url);
         //holder.setIsRecyclable(false);
     }
 

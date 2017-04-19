@@ -6,23 +6,27 @@
     android:orientation="vertical"
     android:background="@drawable/card_grey_no_padding_2dp">
 
-    <com.stream.widget.LoadImageView
-        android:id="@+id/thumb"
+    <FrameLayout
+        android:id="@+id/video_container"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:scaleType="centerCrop"
-        android:foreground="@drawable/tile_background"
-        android:minHeight="200dp"
-        />
+        android:layout_height="230dp"
+        android:background="@color/primary_drawable_light">
 
-    <TextView
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="2dp"
-        android:textSize="18dp"
-        android:textStyle="bold"
-        android:background="@color/primary_drawable_dark"
-        tools:ignore="SpUsage"/>
+        <com.stream.widget.VideoTextureView
+            android:id="@+id/list_video_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <com.stream.widget.LoadImageView
+            android:id="@+id/list_thumb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+
+        <com.stream.widget.MediaControl
+            android:id="@+id/media_control"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
 </LinearLayout>

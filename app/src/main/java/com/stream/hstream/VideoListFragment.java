@@ -187,8 +187,8 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
             return false;
         }
 
-        mClickVideo = mHelper.getDataAt(position);
-        requiredDetailInfo();
+        //mClickVideo = mHelper.getDataAt(position);
+        //requiredDetailInfo();
 //
 //        Bundle args = new Bundle();
 //        args.putParcelable(VideoDetailFragment.KEY_DETAIL_INFO, info);
