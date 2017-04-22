@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/video_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/video_background_dark">
+
+        <com.stream.videoplayerlibrary.tv.VideoTextureView
+            android:id="@+id/video_textureview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <android.support.v7.widget.AppCompatImageView
+            android:id="@+id/thumb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+
+        <FrameLayout
+            android:id="@+id/video_center"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/video_background_light">
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/play_button"
+                android:layout_width="@dimen/mc_large_size"
+                android:layout_height="@dimen/mc_large_size"
+                android:background="@drawable/v_media_play_circle"
+                android:src="@drawable/ic_media_play"
+                android:layout_gravity="center"/>
+
+            <ProgressBar
+                style="?android:attr/progressBarStyle"
+                android:layout_width="@dimen/mc_large_size"
+                android:layout_height="@dimen/mc_large_size"
+                android:id="@+id/wait_bar"
+                android:layout_gravity="center"
+                android:visibility="gone"/>
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/video_top"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_margin="16dip">
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/back_button"
+                android:layout_width="@dimen/mc_middle_size"
+                android:layout_height="@dimen/mc_middle_size"
+                android:background="@null"
+                android:layout_gravity="center_vertical"
+                android:src="@drawable/ic_nav_back"
+                android:visibility="gone"/>
+
+            <com.stream.videoplayerlibrary.common.AutoMarqueeTextView
+                android:id="@+id/view_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.AppCompat.Title.Inverse"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:textSize="16sp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/video_bottom"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true"
+            android:orientation="horizontal"
+            android:layout_margin="16dip"
+            android:layout_marginRight="16dip">
+
+            <TextView
+                android:text="00:00"
+                android:id="@+id/time_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:textColor="@color/time_text_light"/>
+
+            <SeekBar
+                android:id="@+id/seek_bar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+                android:maxHeight="1dp"
+                android:progressDrawable="@drawable/tu_video_seek_bar"
+                android:thumb="@drawable/tu_video_seek_thumb"/>
+
+            <TextView
+                android:text="00:00"
+                android:id="@+id/total_time_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right|center_vertical"
+                android:textColor="@color/time_text_light"/>
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/screen_control"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_screen_full"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="10dp"/>
+        </LinearLayout>
+
+    </RelativeLayout>
+</merge>

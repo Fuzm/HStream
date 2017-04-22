@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 
 import com.hippo.conaco.Conaco;
 import com.hippo.conaco.ConacoTask;
@@ -21,7 +22,19 @@ public class LoadImageHelper {
 
     private static final String TAG = LoadImageHelper.class.getSimpleName();
 
-    public static void loadImage(Context context, String key, String url, final View view)  {
+    private Context mContext;
+    private Drawable mDrawable;
+    private ImageView mImageView;
+
+    private LoadImageHelper(Context context) {
+        mContext = context;
+    }
+
+    public static LoadImageHelper with(Context context) {
+        return new LoadImageHelper(context);
+    }
+
+    public LoadImageHelper load(String key, String url)  {
         Unikery<ImageBitmap> unikery = new Unikery<ImageBitmap>() {
 
             private int mTaskId = Unikery.INVALID_ID;
@@ -67,7 +80,10 @@ public class LoadImageHelper {
                 }
 
                 if(null != drawable) {
-                    view.setBackground(drawable);
+                    if(mImageView != null) {
+                        mImageView.setImageDrawable(drawable);
+                    }
+                    mDrawable = drawable;
                 }
                 return true;
             }
@@ -82,7 +98,7 @@ public class LoadImageHelper {
 
             }
         };
-        Conaco<ImageBitmap> mConaco = HStreamApplication.getConaco(context);
+        Conaco<ImageBitmap> mConaco = HStreamApplication.getConaco(mContext);
         ConacoTask.Builder<ImageBitmap> builder = new ConacoTask.Builder<ImageBitmap>()
                 .setUnikery(unikery)
                 .setKey(key)
@@ -90,5 +106,14 @@ public class LoadImageHelper {
                 .setDataContainer(null)
                 .setUseNetwork(true);
         mConaco.load(builder);
+        return this;
+    }
+
+    public LoadImageHelper into(ImageView view) {
+        if(mDrawable != null) {
+            view.setImageDrawable(mDrawable);
+        }
+        mImageView = view;
+        return this;
     }
 }

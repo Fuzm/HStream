@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <FrameLayout
+        android:id="@+id/video_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/bacground_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+
+        <com.stream.videoplayerlibrary.tv.VideoTextureView
+            android:id="@+id/list_video_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"/>
+
+        <include layout="@layout/widget_media_control_bottom"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"></include>
+
+        <include layout="@layout/widget_media_control_center" android:layout_width="match_parent"
+                 android:layout_height="match_parent"></include>
+
+        <include layout="@layout/widget_media_control_header"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"></include>
+
+    </FrameLayout>
+
+</merge>

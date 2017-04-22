@@ -25,12 +25,14 @@ import com.stream.hstream.HsCallback;
 import com.stream.hstream.R;
 import com.stream.hstream.VideoListFragment;
 import com.stream.hstream.VideoPlayActivity;
+import com.stream.util.LoadImageHelper;
+import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 
 /**
  * Created by Fuzm on 2017/3/24 0024.
  */
 
-public abstract class VideoAdapter extends RecyclerView.Adapter<VideoHolder> {
+public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
 
     private final LayoutInflater mInflater;
     private final Resources mResources;
@@ -52,19 +54,20 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoHolder> {
     }
 
     @Override
-    public VideoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        return new VideoHolder(mContext, mInflater.inflate(R.layout.item_video_grid, parent, false));
+    public VideoTvHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        //return new VideoHolder(mContext, mInflater.inflate(R.layout.item_video_grid, parent, false));
+        return new VideoTvHolder(mContext, mInflater.inflate(R.layout.item_video_list, parent, false));
     }
 
     @Override
-    public void onBindViewHolder(VideoHolder holder, int position) {
+    public void onBindViewHolder(VideoTvHolder holder, int position) {
         VideoInfo videoInfo = getDataAt(position);
 
-        holder.setTitle(videoInfo.title);
-        holder.setThumb(videoInfo.token, videoInfo.thumb);
+        holder.mVideoPlayer.setTitle(videoInfo.title);
+        LoadImageHelper.with(mContext)
+                .load(videoInfo.token, videoInfo.thumb)
+                .into(holder.mVideoPlayer.getThumb());
         holder.requiredSourceInfo(videoInfo.url);
-        //holder.setSourceUrl(videoInfo.url);
-        //holder.setIsRecyclable(false);
     }
 
     public abstract VideoInfo getDataAt(int position);

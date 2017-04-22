@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/view_center"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@null">
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/play_button"
+        android:layout_width="@dimen/mc_large_size"
+        android:layout_height="@dimen/mc_large_size"
+        android:background="@drawable/v_media_play_circle"
+        android:src="@drawable/ic_media_play"
+        android:layout_gravity="center"/>
+
+    <ProgressBar
+        style="?android:attr/progressBarStyle"
+        android:layout_width="@dimen/mc_large_size"
+        android:layout_height="@dimen/mc_large_size"
+        android:id="@+id/wait_bar"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+</FrameLayout>
+

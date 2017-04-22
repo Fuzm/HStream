@@ -1,4 +1,4 @@
-package com.stream.widget;
+package com.stream.videoplayerlibrary.tv;
 
 import android.content.Context;
 import android.support.v7.widget.AppCompatSeekBar;
@@ -13,12 +13,12 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.stream.hstream.R;
+import com.stream.videoplayerlibrary.R;
 
 import java.util.Formatter;
 import java.util.Locale;
@@ -27,11 +27,14 @@ import java.util.Locale;
  * Created by Fuzm on 2017/4/17 0017.
  */
 
-public class MediaControl extends FrameLayout {
+public class MediaController extends FrameLayout {
 
-    private static final String TAG = MediaControl.class.getSimpleName();
+    private static final String TAG = MediaController.class.getSimpleName();
     private static final int sDefaultTimeout = 3000;
     private static final int MAX_PROGRESS = 1000;
+
+    private static final int STATE_IDLE = 0;
+    private static final int STATE_START = 1;
 
     private View mAnchor;
     private View mHeader;
@@ -41,7 +44,6 @@ public class MediaControl extends FrameLayout {
     private WindowManager mWindowManager;
     private Window mWindow;
     private MediaController.MediaPlayerControl mPlayer;
-
     private LinearLayout mViewHeader;
     private ImageView mBackButton;
     private TextView mTitleView;
@@ -57,29 +59,18 @@ public class MediaControl extends FrameLayout {
 
     private Context mContext;
     private boolean mShowing = false;
+    private int mCurrentState = STATE_IDLE;
     private StringBuilder mFormatBuilder;
     private Formatter mFormatter;
     private int mCurrentPosition = -1;
-    private StreamVideoView.OnBackClickListener mOnBackClickListener;
+    private MediaController.OnBackClickListener mOnBackClickListener;
     private OnClickListener mOnPlayButtonClick;
 
     private OnClickListener mPlayButtonClick = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            if(mOnPlayButtonClick != null) {
-                mOnPlayButtonClick.onClick(v);
-            }
-
-            if(mPlayer != null) {
-                if (mPlayer.isPlaying()) {
-                    mPlayer.pause();
-                    show();
-                } else {
-                    mPlayer.start();
-                    show(sDefaultTimeout);
-                }
-                updatePlayButton();
-            }
+            showWaitBar();
+            start();
         }
     };
 
@@ -119,17 +110,6 @@ public class MediaControl extends FrameLayout {
         }
     };
 
-    // This is called whenever mAnchor's layout bound changes
-    private final OnLayoutChangeListener mLayoutChangeListener =new OnLayoutChangeListener() {
-        @Override
-        public void onLayoutChange(View v, int left, int top, int right,
-                                   int bottom, int oldLeft, int oldTop, int oldRight,
-                                   int oldBottom) {
-            //updateFloatingWindowLayout();
-        }
-    };
-
-
     private final Runnable mFadeOut = new Runnable() {
         @Override
         public void run() {
@@ -142,7 +122,6 @@ public class MediaControl extends FrameLayout {
         public void run() {
             int pos = setProgress();
             if (mPlayer != null && mShowing && mPlayer.isPlaying()) {
-                //Log.d(TAG, "progress delayed time: " + (MAX_PROGRESS - (pos % MAX_PROGRESS)));
                 postDelayed(mShowProgress, MAX_PROGRESS - (pos % MAX_PROGRESS));
             }
         }
@@ -166,15 +145,15 @@ public class MediaControl extends FrameLayout {
         }
     };
 
-    public MediaControl(Context context) {
+    public MediaController(Context context) {
         this(context, null);
     }
 
-    public MediaControl(Context context, AttributeSet attrs) {
+    public MediaController(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public MediaControl(Context context, AttributeSet attrs, int defStyleAttr) {
+    public MediaController(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
         mContext = context;
@@ -183,11 +162,11 @@ public class MediaControl extends FrameLayout {
         View center = initControllerViewCenter(inflate);
         View header = initControllerViewHeader(inflate);
 
-        FrameLayout.LayoutParams headerParams = new FrameLayout.LayoutParams(
+        LayoutParams headerParams = new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        FrameLayout.LayoutParams centerParams = new FrameLayout.LayoutParams(
+        LayoutParams centerParams = new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
         );
@@ -208,15 +187,7 @@ public class MediaControl extends FrameLayout {
      * @param view The view to which to anchor the controller when it is visible.
      */
     public void setAnchorView(View view) {
-        if (mAnchor != null) {
-            mAnchor.removeOnLayoutChangeListener(mLayoutChangeListener);
-        }
-        mAnchor = view;
-        if (mAnchor != null) {
-            mAnchor.addOnLayoutChangeListener(mLayoutChangeListener);
-        }
-
-        FrameLayout.LayoutParams frameParams = new FrameLayout.LayoutParams(
+        LayoutParams frameParams = new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
@@ -247,7 +218,6 @@ public class MediaControl extends FrameLayout {
 
         mFormatBuilder = new StringBuilder();
         mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
-
         return view;
     }
 
@@ -259,7 +229,6 @@ public class MediaControl extends FrameLayout {
         mPlayButton = (ImageView) mViewCenter.findViewById(R.id.play_button);
         mWaitBar = (ProgressBar) mViewCenter.findViewById(R.id.wait_bar);
         mPlayButton.setOnClickListener(mPlayButtonClick);
-
         return view;
     }
 
@@ -275,12 +244,27 @@ public class MediaControl extends FrameLayout {
         return view;
     }
 
+    private void start() {
+        if(mPlayer != null) {
+            if (mPlayer.isPlaying()) {
+                mPlayer.pause();
+                show();
+            } else {
+                mPlayer.start();
+                show(sDefaultTimeout);
+            }
+            updatePlayButton();
+            mCurrentState = STATE_START;
+        } else {
+            Toast.makeText(mContext, "Player initialing, pleas try in mimutes!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     public void setTitle(String title) {
         mTitleView.setText(title);
     }
 
     public void setTitleBarShow(boolean visibility) {
-        //mTitleBarShow = visibility;
         mViewHeader.setVisibility(VISIBLE);
     }
 
@@ -288,7 +272,7 @@ public class MediaControl extends FrameLayout {
         mOnPlayButtonClick = listener;
     }
 
-    public void addBackButtonListener(StreamVideoView.OnBackClickListener listener) {
+    public void addBackButtonListener(MediaController.OnBackClickListener listener) {
         mBackButton.setVisibility(VISIBLE);
         mOnBackClickListener = listener;
     }
@@ -313,30 +297,34 @@ public class MediaControl extends FrameLayout {
         }
         if (!mShowing) {
             mShowing = true;
+
             this.setVisibility(VISIBLE);
-            mViewBottom.setVisibility(VISIBLE);
+            if(mCurrentState == STATE_START) {
+                mBottom.setVisibility(VISIBLE);
+            }
         }
+
+        hideWaitBar();
         updatePlayButton();
         post(mShowProgress);
-        if (timeout != 0) {
+        if (timeout != 0 && mPlayer.isPlaying()) {
             removeCallbacks(mFadeOut);
             postDelayed(mFadeOut, timeout);
         }
     }
 
-    protected void hide() {
-//        if (mViewHeader == null || mViewBottom == null) {
-//            return;
-//        }
 
+    protected void hide() {
         if (mShowing) {
             removeCallbacks(mShowProgress);
 
             mShowing = false;
-//            mViewHeader.setVisibility(GONE);
-//            mViewBottom.setVisibility(GONE);
             this.setVisibility(GONE);
         }
+    }
+
+    public void reset() {
+        mCurrentState = STATE_IDLE;
     }
 
     protected boolean isShowing() {
@@ -373,7 +361,7 @@ public class MediaControl extends FrameLayout {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        if(mPlayer == null) {
+        if(mPlayer == null || !mPlayer.isPrepared() || mCurrentState != STATE_START) {
             return false;
         }
 
@@ -442,6 +430,27 @@ public class MediaControl extends FrameLayout {
 
     public interface OnBackClickListener {
         void onClick(View view);
+    }
+
+    public interface MediaPlayerControl {
+        void    start();
+        void    pause();
+        int     getDuration();
+        int     getCurrentPosition();
+        void    seekTo(int pos);
+        boolean isPlaying();
+        int     getBufferPercentage();
+        boolean canPause();
+        boolean canSeekBackward();
+        boolean canSeekForward();
+        boolean isPrepared();
+
+        /**
+         * Get the audio session id for the player used by this VideoView. This can be used to
+         * apply audio effects to the audio track of a video.
+         * @return The audio session, or 0 if there was an error.
+         */
+        int     getAudioSessionId();
     }
 
 

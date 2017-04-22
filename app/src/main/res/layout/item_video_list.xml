@@ -5,37 +5,9 @@
               android:layout_height="wrap_content"
               android:background="@drawable/card_grey_no_padding_2dp">
 
-    <FrameLayout
-        android:id="@+id/view_container"
+    <com.stream.videoplayerlibrary.tv.TuVideoPlayer
+        android:id="@+id/list_video_player"
         android:layout_width="match_parent"
-        android:layout_height="230dp">
-
-        <com.stream.widget.LoadImageView
-            android:id="@+id/thumb"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:foreground="@drawable/tile_background"
-            android:minHeight="200dp"/>
-
-        <android.support.v7.widget.AppCompatImageView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="center"
-            android:background="@drawable/v_media_play_circle"
-            android:src="@drawable/ic_media_play"/>
-
-    </FrameLayout>
-
-    <TextView
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="2dp"
-        android:textSize="18dp"
-        android:textStyle="bold"
-        android:background="@color/primary_drawable_dark"
-        tools:ignore="SpUsage"/>
+        android:layout_height="230dp" />
 
 </LinearLayout>
