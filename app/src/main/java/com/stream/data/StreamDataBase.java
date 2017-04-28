@@ -7,20 +7,14 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.TimeUtils;
 
 import com.stream.data.model.Favorite;
 import com.stream.data.table.FavoritesTable;
 import com.stream.data.table.SuggestionsTable;
 import com.stream.util.SqlUtils;
 
-import org.w3c.dom.Text;
-
-import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Fuzm on 2017/4/9 0009.
@@ -109,16 +103,33 @@ public class StreamDataBase {
         }
     }
 
-    public void addFavorite(String title, String imagePath, String sourcePath, String videoPath) {
-        if(!TextUtils.isEmpty(title) && !TextUtils.isEmpty(imagePath) && !TextUtils.isEmpty(sourcePath)) {
+    public Favorite getFavorite(String videoPath) {
+        String sql = "SELECT * FROM " + FavoritesTable.TABLE_NAME
+                + " WHERE " + FavoritesTable.Cols.VIDEO_PATH + " = '" + videoPath + "'";
+
+        Cursor cursor = mDatabase.rawQuery(sql, null);
+        if(cursor.moveToFirst()) {
+            return changeCursorForModel(cursor);
+        } else {
+            return null;
+        }
+    }
+
+    public void addFavorite(Favorite favorite) {
+        if(!TextUtils.isEmpty(favorite.getTitle())) {
             ContentValues values = new ContentValues();
-            values.put(FavoritesTable.Cols.TITLE, title);
-            values.put(FavoritesTable.Cols.IMAGE_PTAH, imagePath);
-            values.put(FavoritesTable.Cols.SOURCE_PATH, sourcePath);
-            values.put(FavoritesTable.Cols.VIDEO_PATH, videoPath);
+            values.put(FavoritesTable.Cols.TITLE, favorite.getTitle());
+            values.put(FavoritesTable.Cols.IMAGE_PTAH, favorite.getImagePath());
+            values.put(FavoritesTable.Cols.SOURCE_PATH, favorite.getSourcePath());
+            values.put(FavoritesTable.Cols.VIDEO_PATH, favorite.getVideoPath());
 
             mDatabase.insert(FavoritesTable.TABLE_NAME, null, values);
         }
+    }
+
+    public void removeFavorite(String videoPath) {
+        mDatabase.execSQL("DELETE FROM " + FavoritesTable.TABLE_NAME
+                + " WHERE " + FavoritesTable.Cols.VIDEO_PATH + " = '" + videoPath + "'");
     }
 
     public List<Favorite> queryFavorites() {
@@ -130,25 +141,28 @@ public class StreamDataBase {
         Cursor cursor = mDatabase.rawQuery(sb.toString(), null);
         if (cursor.moveToFirst()) {
             while (!cursor.isAfterLast()) {
-                String id = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.UUID));
-                String title = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.TITLE));
-                String imagePath = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.IMAGE_PTAH));
-                String sourcePath = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.SOURCE_PATH));
-                String videoPath = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.VIDEO_PATH));
-
-                Favorite favorite = new Favorite();
-                favorite.setId(id);
-                favorite.setTitle(title);
-                favorite.setImagePath(imagePath);
-                favorite.setSourcePath(sourcePath);
-                favorite.setVideoPath(videoPath);
-                queryList.add(favorite);
-
+                queryList.add(changeCursorForModel(cursor));
                 cursor.moveToNext();
             }
         }
         cursor.close();
         return queryList;
+    }
+
+    private Favorite changeCursorForModel(Cursor cursor) {
+        String id = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.UUID));
+        String title = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.TITLE));
+        String imagePath = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.IMAGE_PTAH));
+        String sourcePath = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.SOURCE_PATH));
+        String videoPath = cursor.getString(cursor.getColumnIndex(FavoritesTable.Cols.VIDEO_PATH));
+
+        Favorite favorite = new Favorite();
+        favorite.setId(id);
+        favorite.setTitle(title);
+        favorite.setImagePath(imagePath);
+        favorite.setSourcePath(sourcePath);
+        favorite.setVideoPath(videoPath);
+        return favorite;
     }
 
     private class DataHelper extends SQLiteOpenHelper {

@@ -1,7 +1,6 @@
 package com.stream.hstream;
 
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -17,7 +16,6 @@ import com.stream.client.HsRequest;
 import com.stream.client.data.VideoSourceInfo;
 import com.stream.client.data.VideoInfo;
 import com.stream.client.parser.VideoSourceParser;
-import com.stream.client.parser.VideoUrlParser;
 import com.stream.scene.SceneFragment;
 import com.stream.widget.LoadImageView;
 
@@ -123,11 +121,11 @@ public class VideoDetailFragment extends SceneFragment implements AdapterView.On
         Map info = (Map) mData.get(position);
         //requiredVideoUrl((String) info.get("url"));
 
-        Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
-        intent.putExtra(VideoPlayActivity.KEY_VIDEO_TITLE, mVideoInfo.title);
-        intent.putExtra(VideoPlayActivity.KEY_VIDEO_THUMB, mVideoInfo.thumb);
-        intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, (String) info.get("videoUrl"));
-        startActivity(intent);
+//        Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
+//        intent.putExtra(VideoPlayActivity.KEY_VIDEO_TITLE, mVideoInfo.title);
+//        intent.putExtra(VideoPlayActivity.KEY_VIDEO_THUMB, mVideoInfo.thumb);
+//        intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, (String) info.get("videoUrl"));
+//        startActivity(intent);
     }
 
     public class VideoDetailListener extends HsCallback<VideoDetailFragment, VideoSourceParser.Result> {

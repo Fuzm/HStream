@@ -9,4 +9,11 @@
     <string name="VideoView_error_text_unknown" msgid="3450439155187810085">"无法播放此视频。"</string>
     <string name="VideoView_error_button" msgid="2822238215100679592">"确定"</string>
 
+    <!-- -->
+    <string name="press_twice_exit">请在按一次退出</string>
+
+    <!-- Menu -->
+    <string name="menu_home">主页</string>
+    <string name="menu_favorite">收藏</string>
+
 </resources>

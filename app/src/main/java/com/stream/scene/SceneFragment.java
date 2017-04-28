@@ -19,8 +19,10 @@ package com.stream.scene;
 import android.os.Bundle;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.widget.Toast;
 
 import com.hippo.yorozuya.collect.IntList;
 import com.stream.hstream.MainActivity;
@@ -31,6 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SceneFragment extends Fragment {
+
+    public static final int LENGTH_SHORT = 0;
+    public static final int LENGTH_LONG = 1;
 
     @IntDef({LAUNCH_MODE_STANDARD, LAUNCH_MODE_SINGLE_TOP, LAUNCH_MODE_SINGLE_TASK})
     @Retention(RetentionPolicy.SOURCE)
@@ -66,10 +71,7 @@ public class SceneFragment extends Fragment {
     }
 
     public void onBackPressed() {
-        FragmentActivity activity = getActivity();
-        if (activity instanceof StageActivity) {
-            ((StageActivity) activity).finishScene(this);
-        }
+       finish();
     }
 
     void returnResult(StageActivity stage) {
@@ -99,6 +101,24 @@ public class SceneFragment extends Fragment {
         FragmentActivity activity = getActivity();
         if(activity instanceof MainActivity) {
             ((MainActivity) activity).toggleDrawer(edgeGravity);
+        }
+    }
+
+    /**
+     * If activity is running, show snack bar, otherwise show toast
+     */
+    public void showTip(CharSequence message, int length) {
+        Toast.makeText(getActivity(), message, length == LENGTH_LONG ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();
+    }
+
+    public void showTip(@StringRes int id, int length) {
+        showTip(getString(id), length);
+    }
+
+    public void finish() {
+        FragmentActivity activity = getActivity();
+        if (activity instanceof StageActivity) {
+            ((StageActivity) activity).finishScene(this);
         }
     }
 

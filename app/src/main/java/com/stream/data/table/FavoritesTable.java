@@ -22,6 +22,7 @@ public final class FavoritesTable {
         builder.append(Cols.UUID + " integer primary key autoincrement, ");
         builder.append(Cols.TITLE + ",");
         builder.append(Cols.IMAGE_PTAH + ",");
+        builder.append(Cols.SOURCE_PATH + ",");
         builder.append(Cols.VIDEO_PATH + ")");
         return builder.toString();
     }

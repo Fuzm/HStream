@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
@@ -21,6 +22,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.stream.client.HsClient;
@@ -36,6 +38,7 @@ import com.stream.scene.Announcer;
 import com.stream.scene.SceneFragment;
 import com.stream.util.AppHelper;
 import com.stream.util.DrawableManager;
+import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 import com.stream.widget.ContentLayout;
 import com.stream.widget.EditTextDialogBuilder;
 import com.stream.widget.FabLayout;
@@ -56,6 +59,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     public final static String KEY_HAS_FIRST_REFRESH = "has_first_refresh";
 
     private static final long ANIMATE_TIME = 300L;
+    private static final int BACK_PRESSED_INTERVAL = 2000;
 
     private ContentLayout mContentLayout;
     private SearchBar mSearchBar;
@@ -72,6 +76,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
 
     private boolean mHasFirstRefresh = false;
     private VideoInfo mClickVideo;
+    private long mPressBackTime = 0;
 
     private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
         @Override
@@ -210,11 +215,11 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     private void onRequiredDetailSuccess(VideoSourceParser.Result result) {
         VideoSourceInfo videoSourceInfo = result.mVideoSourceInfoList.get(0);
         if(videoSourceInfo != null) {
-            Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
-            intent.putExtra(VideoPlayActivity.KEY_VIDEO_TITLE, mClickVideo.title);
-            intent.putExtra(VideoPlayActivity.KEY_VIDEO_THUMB, mClickVideo.thumb);
-            intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, videoSourceInfo.videoUrl);
-            startActivity(intent);
+//            Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
+//            intent.putExtra(VideoPlayActivity.KEY_VIDEO_TITLE, mClickVideo.title);
+//            intent.putExtra(VideoPlayActivity.KEY_VIDEO_THUMB, mClickVideo.thumb);
+//            intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, videoSourceInfo.videoUrl);
+//            startActivity(intent);
         }
     }
 
@@ -459,6 +464,30 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
     }
 
+    private boolean checkDoubleClickExit() {
+        long time = System.currentTimeMillis();
+        if (time - mPressBackTime > BACK_PRESSED_INTERVAL) {
+            // It is the last scene
+            mPressBackTime = time;
+            showTip(R.string.press_twice_exit, LENGTH_SHORT);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(TuVideoPlayer.backPress()) {
+            return;
+        }
+
+        boolean handle = checkDoubleClickExit();
+        if(!handle) {
+            finish();
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -467,4 +496,6 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
             mClient = null;
         }
     }
+
+
 }

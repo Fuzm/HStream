@@ -38,5 +38,11 @@
     <!-- Button to close error alert when a video cannot be played -->
     <string name="VideoView_error_button">OK</string>
 
+    <!-- -->
+    <string name="press_twice_exit">Press twice to exit</string>
+
+    <!-- Menu -->
+    <string name="menu_home">Home</string>
+    <string name="menu_favorite">Favorite</string>
 
 </resources>

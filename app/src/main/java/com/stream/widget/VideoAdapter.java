@@ -1,30 +1,17 @@
 package com.stream.widget;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Parcelable;
 import android.support.annotation.NonNull;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 
-import com.stream.client.HsCacheKeyFactory;
-import com.stream.client.HsClient;
-import com.stream.client.HsRequest;
 import com.stream.client.data.VideoInfo;
-import com.stream.client.data.VideoSourceInfo;
-import com.stream.client.parser.VideoSourceParser;
-import com.stream.hstream.HStreamApplication;
-import com.stream.hstream.HsCallback;
+import com.stream.data.StreamDataBase;
+import com.stream.data.model.Favorite;
 import com.stream.hstream.R;
-import com.stream.hstream.VideoListFragment;
-import com.stream.hstream.VideoPlayActivity;
 import com.stream.util.LoadImageHelper;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 
@@ -63,12 +50,42 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
     public void onBindViewHolder(VideoTvHolder holder, int position) {
         VideoInfo videoInfo = getDataAt(position);
 
-        holder.mVideoPlayer.setTitle(videoInfo.title);
+        holder.mVideoPlayer.setUp(null, videoInfo.title, TuVideoPlayer.MODE_NORMAL_SCREEN);
+        holder.mVideoPlayer.setOnFavoriteListener(new FavoriteVideoListener(videoInfo));
         LoadImageHelper.with(mContext)
-                .load(videoInfo.token, videoInfo.thumb)
+                .load(videoInfo.thumb, videoInfo.thumb)
                 .into(holder.mVideoPlayer.getThumb());
         holder.requiredSourceInfo(videoInfo.url);
     }
 
     public abstract VideoInfo getDataAt(int position);
+
+    public class FavoriteVideoListener implements TuVideoPlayer.OnFavoriteListener {
+
+        private VideoInfo mVideoInfo;
+
+        public FavoriteVideoListener(VideoInfo videoInfo) {
+            mVideoInfo = videoInfo;
+        }
+
+        @Override
+        public boolean isFavorited(String videoPath) {
+            return StreamDataBase.getInstance(mContext).getFavorite(videoPath) != null;
+        }
+
+        @Override
+        public void onFavorite(String videoPath) {
+            if(!isFavorited(videoPath)) {
+                Favorite favorite = new Favorite();
+                favorite.setTitle(mVideoInfo.title);
+                favorite.setImagePath(mVideoInfo.thumb);
+                favorite.setSourcePath(mVideoInfo.url);
+                favorite.setVideoPath(videoPath);
+
+                StreamDataBase.getInstance(mContext).addFavorite(favorite);
+            } else {
+                StreamDataBase.getInstance(mContext).removeFavorite(videoPath);
+            }
+        }
+    }
 }

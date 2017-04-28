@@ -29,10 +29,4 @@
         app:headerLayout="@layout/nav_header_main"
         app:menu="@menu/activity_main_drawer"/>
 
-    <!-- reslove videoview black flash-->
-    <SurfaceView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone"/>
-
 </android.support.v4.widget.DrawerLayout>

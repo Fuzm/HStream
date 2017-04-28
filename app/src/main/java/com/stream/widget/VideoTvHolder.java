@@ -25,47 +25,18 @@ import java.util.List;
 
 public class VideoTvHolder extends RecyclerView.ViewHolder{
 
-    private static List<VideoTvHolder> registerHodler = new ArrayList<>();
     private final Context mContext;
     private HsClient mClient;
-    private boolean mClick = false;
     private String mVideoUrl;
 
     public TuVideoPlayer mVideoPlayer;
-    private View.OnClickListener mOnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            if(!mClick) {
-                registe();
-                mClick = true;
-            }
-        }
-    };
 
     public VideoTvHolder(Context context, View itemView) {
         super(itemView);
 
         mContext = context;
         mClient = HStreamApplication.getHsClient(context);
-
         mVideoPlayer = (TuVideoPlayer) itemView.findViewById(R.id.list_video_player);
-        mVideoPlayer.setOnClickListener(mOnClickListener);
-
-    }
-
-    public void registe() {
-        if(registerHodler.size() >= Setting.MAX_LIST_VIEO_PLAY_NUM) {
-            registerHodler.get(0).unregiste();
-        }
-
-        registerHodler.add(this);
-        this.setIsRecyclable(false);
-    }
-
-    public void unregiste() {
-        registerHodler.remove(this);
-        mVideoPlayer.reset();
-        this.mClick = false;
     }
 
     public void requiredSourceInfo(String sourceUrl) {

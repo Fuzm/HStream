@@ -6,18 +6,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.stream.widget.ContentLayout
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/fragment_content_layout" />
+        android:layout_height="match_parent">
 
-    <com.stream.widget.SearchBar
-        android:id="@+id/search_tool_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/gallery_search_bar_margin_h"
-        android:layout_marginRight="@dimen/gallery_search_bar_margin_h"
-        android:layout_marginTop="@dimen/gallery_search_bar_margin_v"/>
+        <com.stream.widget.SearchBar
+            android:id="@+id/search_tool_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+            <!--android:layout_marginLeft="@dimen/gallery_search_bar_margin_h"-->
+            <!--android:layout_marginRight="@dimen/gallery_search_bar_margin_h"-->
+            <!--android:layout_marginTop="@dimen/gallery_search_bar_margin_v"/>-->
+
+        <com.stream.widget.ContentLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/fragment_content_layout" />
+    </LinearLayout>
+
 
     <com.stream.widget.FabLayout
         android:id="@+id/fab_layout"
