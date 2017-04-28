@@ -8,10 +8,10 @@
         android:layout_height="match_parent"
         android:background="@color/video_background_dark">
 
-        <com.stream.videoplayerlibrary.tv.VideoTextureView
-            android:id="@+id/video_textureview"
+        <FrameLayout
+            android:id="@+id/textureview_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"></FrameLayout>
 
         <android.support.v7.widget.AppCompatImageView
             android:id="@+id/thumb"
@@ -47,30 +47,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_margin="16dip">
+            android:layout_margin="12dip">
 
-            <android.support.v7.widget.AppCompatImageView
-                android:id="@+id/back_button"
-                android:layout_width="@dimen/mc_middle_size"
-                android:layout_height="@dimen/mc_middle_size"
-                android:background="@null"
-                android:layout_gravity="center_vertical"
-                android:src="@drawable/ic_nav_back"
-                android:visibility="gone"/>
-
-            <com.stream.videoplayerlibrary.common.AutoMarqueeTextView
-                android:id="@+id/view_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:singleLine="true"
-                android:maxLines="1"
-                android:textAppearance="@style/TextAppearance.AppCompat.Title.Inverse"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:ellipsize="marquee"
-                android:marqueeRepeatLimit="marquee_forever"
-                android:textSize="16sp"/>
         </LinearLayout>
 
         <LinearLayout
@@ -81,7 +59,7 @@
             android:layout_alignParentBottom="true"
             android:orientation="horizontal"
             android:layout_margin="16dip"
-            android:layout_marginRight="16dip">
+            android:layout_marginRight="12dip">
 
             <TextView
                 android:text="00:00"
@@ -117,6 +95,13 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginLeft="10dp"/>
         </LinearLayout>
+
+        <com.stream.videoplayerlibrary.common.FloatingPercentView
+            android:id="@+id/percent_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone"/>
 
     </RelativeLayout>
 </merge>

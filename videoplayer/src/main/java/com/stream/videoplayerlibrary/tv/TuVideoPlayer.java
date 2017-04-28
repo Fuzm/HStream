@@ -1,24 +1,27 @@
 package com.stream.videoplayerlibrary.tv;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.*;
 
 import com.stream.videoplayerlibrary.R;
+import com.stream.videoplayerlibrary.common.FloatingPercentView;
 import com.stream.videoplayerlibrary.common.VideoUtils;
 
 import java.util.Formatter;
@@ -28,7 +31,7 @@ import java.util.Locale;
  * Created by Fuzm on 2017/4/19 0019.
  */
 
-public final class TuVideoPlayer extends FrameLayout implements View.OnClickListener{
+public final class TuVideoPlayer extends FrameLayout implements View.OnClickListener, View.OnTouchListener, VideoPlayer{
 
     private static final String TAG = TuVideoPlayer.class.getSimpleName();
 
@@ -37,98 +40,74 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     private static final int STATE_IDLE = 0;
     private static final int STATE_PREPARING = 1;
     private static final int STATE_PLAYING = 2;
+    private static final int STATE_PAUSE = 3;
 
-    private static final int MODE_NORMAL_SCREEN = 1;
-    private static final int MODE_FULL_SCREEN = 2;
+    public static final int MODE_NORMAL_SCREEN = 1;
+    public static final int MODE_FULL_SCREEN = 2;
 
     private Context mContext;
     private String mUrl;
     private int mCurrentState = STATE_IDLE;
+    private int mCurrentScreenMode = MODE_NORMAL_SCREEN;
     private boolean mShowing = false;
     private int mShowTime = 3000;
     private int mCurrentPosition = -1;
-    private int mCurrentScreenMode = MODE_NORMAL_SCREEN;
+    private int mCurrentBufferPercentage = 0;
+    private int mSeekWhenPrepared = 0;
+
+    private GestureDetector mGestureDetector;
+    private VideoGestureListener mGestureListener;
 
     private StringBuilder mFormatBuilder;
     private Formatter mFormatter;
 
-    private ViewGroup mParent;
-    private VideoTextureView mVideoView;
+    private TuMediaPlayerManager mManager;
+    private TuVideoPlayer mParentPlayer;
+    private ViewGroup mTextureViewContainer;
     private AppCompatImageView mThumb;
+    private FloatingPercentView mPercentView;
     //part of header
-    private View mVideoTop;
+    private ViewGroup mVideoTop;
     private AppCompatImageView mBackButton;
     private TextView mTextTitle;
+    private AppCompatImageView mFavoriteButton;
     //part of center
-    private View mVideoCenter;
+    private ViewGroup mVideoCenter;
     private AppCompatImageView mPlayButton;
     private ProgressBar mWaitBar;
     //part of bottom
-    private View mVideoBottom;
+    private ViewGroup mVideoBottom;
     private SeekBar mSeekBar;
     private TextView mTimeText;
     private TextView mTotalText;
     private AppCompatImageView mScreenControlButton;
 
-    private OnClickListener mOnClickListener;
+    private OnFavoriteListener mFavoriteListener;
 
-    private OnClickListener mClickListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
+//    private OnTouchListener mTouchListener = new OnTouchListener() {
+//        @Override
+//        public boolean onTouch(View v, MotionEvent event) {
+//            if(mCurrentState == STATE_PLAYING) {
+//                hide();
+//            }
+//            return false;
+//        }
+//    };
 
-            if(mOnClickListener != null) {
-                mOnClickListener.onClick(v);
-            }
-
-            if(mCurrentState != STATE_PLAYING) {
-                waitUi();
-                mCurrentState = STATE_PREPARING;
-                openVideo();
-            }
-        }
-    };
-
-    private OnTouchListener mTouchListener = new OnTouchListener() {
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            if(mCurrentState == STATE_PLAYING) {
-                hide();
-            }
-            return false;
-        }
-    };
-
-    private OnTouchListener mLayoutTouchListener = new OnTouchListener() {
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    show(0);
-                    break;
-                case MotionEvent.ACTION_UP:
-                    show(mShowTime);
-                    break;
-            }
-            return true;
-        }
-    };
-
-    private MediaPlayer.OnPreparedListener mOnPreparedListener = new MediaPlayer.OnPreparedListener() {
-        @Override
-        public void onPrepared(MediaPlayer mp) {
-            openVideo();
-        }
-    };
-
-    private final Runnable mShowProgress = new Runnable() {
-        @Override
-        public void run() {
-            int pos = setProgress();
-            if (mVideoView != null && mShowing && mVideoView.isPlaying()) {
-                postDelayed(mShowProgress, MAX_PROGRESS - (pos % MAX_PROGRESS));
-            }
-        }
-    };
+//    private OnTouchListener mLayoutTouchListener = new OnTouchListener() {
+//        @Override
+//        public boolean onTouch(View v, MotionEvent event) {
+//            switch (event.getAction()) {
+//                case MotionEvent.ACTION_DOWN:
+//                    show(0);
+//                    break;
+//                case MotionEvent.ACTION_UP:
+//                    show(mShowTime);
+//                    break;
+//            }
+//            return true;
+//        }
+//    };
 
     private final SeekBar.OnSeekBarChangeListener mSeekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
 
@@ -138,9 +117,9 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
                 return;
             }
 
-            int duration = mVideoView.getDuration();
+            int duration = mManager.getDuration();
             int newPosition = (duration * progress) / MAX_PROGRESS;
-            mVideoView.seekTo(newPosition);
+            mManager.seekTo(newPosition);
             if(mTimeText != null) {
                 mTimeText.setText(stringForTime(newPosition));
             }
@@ -159,14 +138,24 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         }
     };
 
+    private final Runnable mShowProgress = new Runnable() {
+        @Override
+        public void run() {
+            int pos = setProgress();
+            if (mShowing && mCurrentState == STATE_PLAYING) {
+                postDelayed(mShowProgress, MAX_PROGRESS - (pos % MAX_PROGRESS));
+            }
+        }
+    };
+
     private final Runnable mBufferWait = new Runnable() {
         private boolean isWait = false;
         @Override
         public void run() {
-            if(mVideoView != null) {
+            if(mCurrentState == STATE_PLAYING || mCurrentState == STATE_PAUSE) {
                 int oldPosition = mCurrentPosition;
-                mCurrentPosition = mVideoView.getCurrentPosition();
-                if(oldPosition == mCurrentPosition && mVideoView.isPlaying()) {
+                mCurrentPosition = mManager.getCurrentPosition();
+                if(oldPosition == mCurrentPosition && mCurrentState == STATE_PLAYING ) {
                     isWait = true;
                     waitUi();
                 } else {
@@ -177,6 +166,13 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
                 }
 
                 postDelayed(this, MAX_PROGRESS - (mCurrentPosition % MAX_PROGRESS));
+            }
+
+            //不再显示区内时，自动暂停
+            if(!isShown() && mManager != null) {
+                Log.d(TAG, "frame not show, pause the video player");
+                //mManager.releaseMediaPlayer();
+                mManager.pause();
             }
         }
     };
@@ -200,43 +196,35 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         super(context, attrs, defStyleAttr);
 
         mContext = context;
+        mManager = TuMediaPlayerManager.instance();
+
         initView();
     }
 
-    private TuVideoPlayer getSecondFloor() {
-        TuVideoPlayer player = new TuVideoPlayer(mContext);
-        player.setTitle(mTextTitle.getText());
-        player.setThumb(mThumb.getDrawable());
-        player.setVideoPath(mUrl);
-        player.seekTo(mVideoView.getCurrentPosition());
-        player.mCurrentScreenMode = MODE_FULL_SCREEN;
-
-        return player;
-    }
-
     private void initView() {
+        Log.d(TAG, "init videw :" + this.hashCode());
         View view = LayoutInflater.from(mContext).inflate(R.layout.tu_video_player, this);
 
         //video
-        mVideoView = (VideoTextureView) view.findViewById(R.id.video_textureview);
+        mTextureViewContainer = (ViewGroup) view.findViewById(R.id.textureview_container);
         mThumb = (AppCompatImageView) view.findViewById(R.id.thumb);
-        mVideoView.setOnPreparedListener(mOnPreparedListener);
+        mPercentView = (FloatingPercentView) view.findViewById(R.id.percent_view);
 
         //video header
-        mVideoTop = view.findViewById(R.id.video_top);
+        mVideoTop = (ViewGroup) view.findViewById(R.id.video_top);
         mBackButton = (AppCompatImageView) view.findViewById(R.id.back_button);
         mTextTitle = (TextView) view.findViewById(R.id.view_title);
 
         //video center
-        mVideoCenter = view.findViewById(R.id.video_center);
+        mVideoCenter = (ViewGroup) view.findViewById(R.id.video_center);
         mPlayButton = (AppCompatImageView) view.findViewById(R.id.play_button);
         mWaitBar = (ProgressBar) view.findViewById(R.id.wait_bar);
         mVideoCenter.setOnClickListener(this);
-        mVideoCenter.setOnTouchListener(mTouchListener);
+        mVideoCenter.setOnTouchListener(this);
         mPlayButton.setOnClickListener(this);
 
         //video bottom
-        mVideoBottom = view.findViewById(R.id.video_bottom);
+        mVideoBottom = (ViewGroup) view.findViewById(R.id.video_bottom);
         mSeekBar = (SeekBar) view.findViewById(R.id.seek_bar);
         mTimeText = (TextView) view.findViewById(R.id.time_text);
         mTotalText = (TextView) view.findViewById(R.id.total_time_text);
@@ -247,11 +235,45 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         mScreenControlButton.setOnClickListener(this);
 
         //setUiVisiable(VISIBLE, VISIBLE, VISIBLE, GONE, GONE);
-        changeUiForInit();
+        setCurrentStateAndUi(STATE_IDLE);
+
         mFormatBuilder = new StringBuilder();
         mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
 
-        this.setOnTouchListener(mLayoutTouchListener);
+        //this.setOnTouchListener(this);
+    }
+
+    /*public void setCurrentScreenMode(int screenMode) {
+        Log.d(TAG, "set current screen mode:" + screenMode);
+        mCurrentScreenMode = screenMode;
+        setCurrentStateAndUi(STATE_IDLE);
+    }*/
+
+    public void setUp(String uri, String title, int screenMode) {
+        mUrl = uri;
+        mCurrentScreenMode = screenMode;
+
+        if(screenMode == MODE_NORMAL_SCREEN) {
+            View view = LayoutInflater.from(mContext).inflate(R.layout.tu_video_player_normal_top, mVideoTop);
+            mTextTitle = (TextView) view.findViewById(R.id.view_title);
+        } else if(screenMode == MODE_FULL_SCREEN) {
+            View view = LayoutInflater.from(mContext).inflate(R.layout.tu_video_player_fullscreen_top, mVideoTop);
+            mTextTitle = (TextView) view.findViewById(R.id.view_title);
+            mBackButton = (AppCompatImageView) view.findViewById(R.id.back_button);
+            mFavoriteButton = (AppCompatImageView) view.findViewById(R.id.favorite_button);
+
+            //updateFavoriteButton();
+            mBackButton.setOnClickListener(this);
+            mFavoriteButton.setOnClickListener(this);
+
+            mGestureListener = new VideoGestureListener();
+            mGestureDetector = new GestureDetector(mContext, mGestureListener);
+        }
+
+        setTitle(title);
+        setCurrentStateAndUi(STATE_IDLE);
+        mThumb.setImageDrawable(null);
+
     }
 
     public void setTitle(CharSequence title) {
@@ -267,13 +289,12 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     }
 
     public void seekTo(int posi) {
-        mVideoView.seekTo(posi);
+        mManager.seekTo(posi);
     }
 
     public void setVideoPath(String url) {
         mUrl = url;
-        mVideoView.setVideoPath(url);
-        openVideo();
+        prepareMediaPlayer();
     }
 
     private void setUiVisiable(int videoTop, int videoCenter, int videoBottom, int thumb, int playButton, int waitBar) {
@@ -289,19 +310,50 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         mVideoBottom.setVisibility(videoBottom);
     }
 
-    private void openVideo() {
-        if(checkPrepared()) {
-            mVideoView.start();
-            mCurrentState = STATE_PLAYING;
-            show(3000);
-            post(mBufferWait);
-        } else {
-
+    private void setCurrentStateAndUi(int state) {
+        mCurrentState = state;
+        switch (state) {
+            case STATE_IDLE:
+                Log.d(TAG, "init player");
+//                if(!mManager.isCurrentVideoPlayer(this)) {
+//                    mManager.releaseMediaPlayer();
+//                }
+                changeUiForInit();
+                break;
+            case STATE_PREPARING:
+                changeUiForWaitStart();
+                break;
+            case STATE_PLAYING:
+            case STATE_PAUSE:
+                updatePlayButton();
+                show(3000);
+                break;
         }
     }
 
+    private void prepareMediaPlayer() {
+        if(!checkPrepared()) return;
+        Log.d(TAG, "prepare mediaperl by instance-" + this.hashCode());
+
+        TuMediaPlayerManager.releaseManager(mManager.isCurrentVideoPlayer(this));
+        mManager.setVideoPath(mUrl);
+        mManager.setVideoPlayer(this);
+
+        TextureView textureView = TuMediaPlayerManager.initTextureView(getContext());
+        addTextureView(textureView);
+    }
+
+    private void addTextureView(TextureView textureView) {
+        FrameLayout.LayoutParams layoutParams =
+                new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        Gravity.CENTER);
+        mTextureViewContainer.addView(textureView, layoutParams);
+    }
+
     private void waitUi() {
-        if(mCurrentState == STATE_PLAYING) {
+        if(mCurrentState == STATE_PLAYING || mCurrentState == STATE_PAUSE) {
             //setUiVisiable(GONE, VISIBLE, GONE, VISIBLE, VISIBLE);
             changeUiForWaitBuffer();
         } else {
@@ -310,19 +362,9 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         }
     }
 
-    private void updatePlayButton() {
-        if(mVideoView.isPlaying()) {
-            mPlayButton.setImageResource(R.drawable.ic_media_pause);
-        } else {
-            mPlayButton.setImageResource(R.drawable.ic_media_play);
-        }
-    }
-
     private void show(int timeout) {
         mShowing = true;
-        //setUiVisiable(GONE, VISIBLE, VISIBLE, GONE, VISIBLE);
         changeUiForShow();
-        updatePlayButton();
         post(mShowProgress);
         if(timeout != 0) {
             removeCallbacks(mFateOut);
@@ -338,24 +380,19 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     }
 
     private boolean checkPrepared() {
-        return (mVideoView.isPrepared() &&
-                mCurrentState == STATE_PREPARING &&
+        return (mCurrentState == STATE_PREPARING &&
                 mUrl != null);
     }
 
     private int setProgress() {
-        if(mVideoView == null) {
-            return 0;
-        }
-
-        int position = mVideoView.getCurrentPosition();
-        int duration = mVideoView.getDuration();
+        int position = mManager.getCurrentPosition();
+        int duration = mManager.getDuration();
         if(mSeekBar != null) {
             if(duration > 0) {
                 int pos = MAX_PROGRESS * position / duration;
                 mSeekBar.setProgress(pos);
             }
-            int percent = mVideoView.getBufferPercentage();
+            int percent = mCurrentBufferPercentage;
             int second = percent * MAX_PROGRESS / 100;
             mSeekBar.setSecondaryProgress(second);
             //Log.d(TAG, "percent : " + percent + ",second : " + second + ", secondary progress : " + mSeekBar.getSecondaryProgress());
@@ -387,28 +424,8 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         }
     }
 
-    public void setOnClickListener(OnClickListener listener) {
-        mOnClickListener = listener;
-    }
-
-    public void reset() {
-        mVideoView.pause();
-        updatePlayButton();
-
-        if(mCurrentState == STATE_PLAYING) {
-            mCurrentState = STATE_PREPARING;
-        } else {
-            mCurrentState = STATE_IDLE;
-        }
-
-        removeCallbacks(mBufferWait);
-        removeCallbacks(mShowProgress);
-        removeCallbacks(mFateOut);
-
-        changeUiForInit();
-    }
-
     private void changeUiForInit() {
+        updatePlayButton();
         setUiVisiable(VISIBLE, VISIBLE, GONE, VISIBLE, VISIBLE, GONE);
     }
 
@@ -428,41 +445,12 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         setUiVisiable(GONE, GONE, GONE, GONE, GONE, GONE);
     }
 
-    public void startFullScreen() {
-        AppCompatActivity activity =  VideoUtils.getAppCompActivity(mContext);
-        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
-
-        Window window = activity.getWindow();
-        window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        TuVideoPlayer fullPlayer = new TuVideoPlayer(mContext);
-        fullPlayer.setTitle(mTextTitle.getText());
-        fullPlayer.setThumb(mThumb.getDrawable());
-        fullPlayer.setVideoPath(mUrl);
-        fullPlayer.seekTo(mVideoView.getCurrentPosition());
-        fullPlayer.mCurrentScreenMode = MODE_FULL_SCREEN;
-
-        window.addContentView(fullPlayer, lp);
-        fullPlayer.mPlayButton.performClick();
-        fullPlayer.updateSrceenControlView(mCurrentScreenMode);
-    }
-
-    public void endFullScreen() {
-        AppCompatActivity activity = VideoUtils.getAppCompActivity(mContext);
-        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
-
-        Window window = activity.getWindow();
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        ViewGroup parent = (ViewGroup) this.getParent();
-        parent.removeView(this);
-        updateSrceenControlView(mCurrentScreenMode);
+    private void updatePlayButton() {
+        if(mCurrentState == STATE_PLAYING) {
+            mPlayButton.setImageResource(R.drawable.ic_media_pause);
+        } else {
+            mPlayButton.setImageResource(R.drawable.ic_media_play);
+        }
     }
 
     public void updateSrceenControlView(int mode){
@@ -473,42 +461,365 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         }
     }
 
+    public void startFullScreen() {
+        AppCompatActivity activity =  VideoUtils.getAppCompActivity(mContext);
+        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+
+        Window window = activity.getWindow();
+        window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        mTextureViewContainer.removeView(TuMediaPlayerManager.getCurrentTextureView());
+
+        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        TuVideoPlayer fullPlayer = new TuVideoPlayer(mContext);
+        window.addContentView(fullPlayer, lp);
+
+        fullPlayer.setUp(mUrl, mTextTitle.getText().toString(), MODE_FULL_SCREEN);
+        //fullPlayer.mCurrentScreenMode = MODE_FULL_SCREEN;
+        fullPlayer.mParentPlayer = this;
+        fullPlayer.setCurrentStateAndUi(mCurrentState);
+        fullPlayer.addTextureView(TuMediaPlayerManager.getCurrentTextureView());
+        fullPlayer.updatePlayButton();
+        fullPlayer.updateSrceenControlView(fullPlayer.mCurrentScreenMode);
+        fullPlayer.setThumb(mThumb.getDrawable());
+        fullPlayer.setOnFavoriteListener(mFavoriteListener);
+
+        mManager.setVideoPlayer(fullPlayer);
+    }
+
+    public void clearFullScreen() {
+        AppCompatActivity activity = VideoUtils.getAppCompActivity(mContext);
+        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+
+        Window window = activity.getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        ViewGroup parent = (ViewGroup) this.getParent();
+        parent.removeView(this);
+        mTextureViewContainer.removeView(TuMediaPlayerManager.getCurrentTextureView());
+
+        mParentPlayer.addTextureView(TuMediaPlayerManager.getCurrentTextureView());
+        mParentPlayer.setCurrentStateAndUi(mCurrentState);
+        mParentPlayer.updatePlayButton();
+        mParentPlayer.updateSrceenControlView(mParentPlayer.mCurrentScreenMode);
+        mManager.setVideoPlayer(mParentPlayer);
+    }
+
     @Override
     public void onClick(View v) {
         if(v.getId() == R.id.screen_control) {
-
             if(mCurrentScreenMode == MODE_NORMAL_SCREEN) {
                 startFullScreen();
             } else {
-                endFullScreen();
+                clearFullScreen();
             }
 
         } else if(v.getId() == R.id.video_center) {
-            if(mOnClickListener != null) {
-                mOnClickListener.onClick(v);
-            }
-
-            if(mCurrentState != STATE_PLAYING) {
-                waitUi();
-                mCurrentState = STATE_PREPARING;
-                openVideo();
+            if(mCurrentState == STATE_IDLE) {
+                setCurrentStateAndUi(STATE_PREPARING);
+                prepareMediaPlayer();
             }
 
         } else if(v.getId() == R.id.play_button) {
             if(mCurrentState == STATE_PLAYING) {
-                if(mVideoView.isPlaying()) {
-                    mVideoView.pause();
-                    removeCallbacks(mFateOut);
-                    mShowTime = 0;
-                } else {
-                    mVideoView.start();
-                    mShowTime = 3000;
-                }
-                show(mShowTime);
-                updatePlayButton();
+                removeCallbacks(mFateOut);
+                mManager.pause();
+                mShowTime = 0;
+                setCurrentStateAndUi(STATE_PAUSE);
+            } else if(mCurrentState == STATE_PAUSE) {
+                mManager.start();
+                mShowTime = 3000;
+                setCurrentStateAndUi(STATE_PLAYING);
             } else {
                 onClick(mVideoCenter);
             }
+
+        } else if(v.getId() == R.id.back_button) {
+            clearFullScreen();
+
+        } else if(v.getId() == R.id.favorite_button) {
+            if(mFavoriteListener != null) {
+                mFavoriteListener.onFavorite(mUrl);
+                updateFavoriteButton();
+            }
         }
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        if(v.getId() == R.id.video_center) {
+            if(mCurrentState == STATE_PLAYING) {
+                hide();
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                checkEdgeFlag(event);
+                break;
+            case MotionEvent.ACTION_UP:
+                if(mPercentView.isShow()){
+                    mPercentView.hide();
+                } else {
+                    show(mShowTime);
+                }
+                break;
+        }
+
+        if(mCurrentScreenMode == MODE_FULL_SCREEN && mCurrentState != STATE_IDLE && mCurrentState != STATE_PREPARING) {
+            mGestureDetector.onTouchEvent(event);
+        }
+        return true;
+    }
+
+    public void updateFavoriteButton() {
+        if(mFavoriteListener != null && mFavoriteListener.isFavorited(mUrl)) {
+            mFavoriteButton.setImageResource(R.drawable.ic_favorite_24dp);
+        } else {
+            mFavoriteButton.setImageResource(R.drawable.ic_favorite_none_24dp);
+        }
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mp) {
+        if(mCurrentState != STATE_PREPARING) {
+            Log.d(TAG, "current state is not preparing, cannot play the video");
+            return;
+        }
+
+        if (mSeekWhenPrepared != 0) {
+            mManager.seekTo(mSeekWhenPrepared);
+            mSeekWhenPrepared = 0;
+        } else {
+            int position = VideoUtils.getSavedProgress(getContext(), mUrl);
+            if (position != 0) {
+                mManager.seekTo(position);
+            }
+        }
+
+        setCurrentStateAndUi(STATE_PLAYING);
+        post(mBufferWait);
+    }
+
+    @Override
+    public boolean onInfo(MediaPlayer mp, int arg1, int arg2) {
+        return false;
+    }
+
+    @Override
+    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+        mCurrentBufferPercentage = percent;
+    }
+
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        Log.d(TAG, "completion mp : " + mp.hashCode());
+
+        if (mCurrentScreenMode == STATE_PLAYING) {
+            int position = mManager.getCurrentPosition();
+            VideoUtils.saveProgress(getContext(), mUrl, position);
+        }
+
+        //初始化状态
+        setCurrentStateAndUi(STATE_IDLE);
+        // 清理缓存变量
+        mTextureViewContainer.removeView(TuMediaPlayerManager.getCurrentTextureView());
+    }
+
+    @Override
+    public boolean onError(MediaPlayer mp, int what, int extra) {
+        return false;
+    }
+
+    @Override
+    public void onRelease() {
+        Log.d(TAG, "release video player : " + this.hashCode());
+        if (mCurrentState == STATE_PLAYING) {
+            int position = mManager.getCurrentPosition();
+            VideoUtils.saveProgress(getContext(), mUrl, position);
+        }
+
+        //移除监听
+        removeCallbacks(mBufferWait);
+        removeCallbacks(mFateOut);
+        removeCallbacks(mShowProgress);
+        //初始化状态
+        setCurrentStateAndUi(STATE_IDLE);
+        // 清理缓存变量
+        mTextureViewContainer.removeView(TuMediaPlayerManager.getCurrentTextureView());
+    }
+
+    @Override
+    public VideoPlayer getParentPlayer() {
+        return mParentPlayer;
+    }
+
+    @Override
+    public int getCurrentScreenMode() {
+        return mCurrentScreenMode;
+    }
+
+    /**
+     * 回退事件
+     */
+    public static boolean backPress() {
+        TuVideoPlayer player = (TuVideoPlayer) TuMediaPlayerManager.instance().getVideoPlayer();
+        if(player != null) {
+            if(player.getParentPlayer() != null) {
+                player.clearFullScreen();
+                return true;
+            } else {
+                TuMediaPlayerManager.releaseManager();
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    //检查触摸位置
+    private void checkEdgeFlag(MotionEvent e) {
+        float x = e.getX();
+        int width = VideoUtils.getAppCompActivity(mContext).getWindow().getDecorView().getWidth();
+
+        if(x < width/2) {
+            e.setEdgeFlags(MotionEvent.EDGE_LEFT);
+        } else {
+            e.setEdgeFlags(MotionEvent.EDGE_RIGHT);
+        }
+    }
+
+    //改变屏幕亮度
+    public void setLightness(float lightness){
+        WindowManager.LayoutParams layoutParams = VideoUtils.getAppCompActivity(mContext).getWindow().getAttributes();
+        layoutParams.screenBrightness =layoutParams.screenBrightness+lightness/255f;
+        if(layoutParams.screenBrightness>1){
+            layoutParams.screenBrightness=1;
+        }else if(layoutParams.screenBrightness<0.0){
+            layoutParams.screenBrightness=0.0f;
+        }
+        VideoUtils.getAppCompActivity(mContext).getWindow().setAttributes(layoutParams);
+
+        mPercentView.setPercent(layoutParams.screenBrightness);
+        mPercentView.showByType( FloatingPercentView.TYPE_LIGHT);
+    }
+
+    //加减音量
+    public void setAudio(int volume){
+        AudioManager audioManager = (AudioManager) VideoUtils.getAppCompActivity(mContext).getSystemService(Context.AUDIO_SERVICE);
+        //当前音量
+        int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        //最大音量
+        int maxVolume =audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        currentVolume = currentVolume + volume;
+
+        //Log.d(TAG, "current: " + currentVolume + ", max :" + maxVolume + ", add :" + volume);
+
+        if(currentVolume >= 0 && currentVolume<=maxVolume){
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, AudioManager.FLAG_PLAY_SOUND);
+
+            mPercentView.setPercent(currentVolume / (float) maxVolume);
+            mPercentView.showByType(FloatingPercentView.TYPE_VOLUMN);
+        }else {
+            return;
+        }
+    }
+
+    //快进
+    public void speedVideo(int mesc) {
+        int pos = mManager.getCurrentPosition();
+        pos += mesc; // milliseconds
+        mManager.seekTo(pos);
+    }
+
+    public class VideoGestureListener implements GestureDetector.OnGestureListener {
+
+        private boolean mUpAndDown = false;
+        private boolean mLeftAndRight = false;
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+
+            return false;
+        }
+
+        @Override
+        public void onShowPress(MotionEvent e) {
+        }
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            return false;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            Log.d(TAG,"edge: " + e1.getEdgeFlags() +  "distance X: " + distanceX + ", distance Y :" + distanceY);
+            if(!mLeftAndRight && (mUpAndDown || Math.abs(distanceY) > Math.abs(distanceX))) {
+                mUpAndDown = true;
+                if(distanceY > 0 && Math.abs(distanceY) > 2) {
+                    if (e1.getEdgeFlags() == MotionEvent.EDGE_LEFT) {
+                        setLightness(5);
+                    } else if (e1.getEdgeFlags() == MotionEvent.EDGE_RIGHT) {
+                        setAudio(1);
+                    }
+                } else if(distanceY < 0 && Math.abs(distanceY) > 2 && Math.abs(distanceY) > Math.abs(distanceX)) {
+                    if (e1.getEdgeFlags() == MotionEvent.EDGE_LEFT) {
+                        setLightness(-5);
+                    } else if (e1.getEdgeFlags() == MotionEvent.EDGE_RIGHT) {
+                        setAudio(-1);
+                    }
+                }
+            } else {
+                mLeftAndRight = true;
+                //control progress
+                if(distanceX > 0 && Math.abs(distanceX) > 2) {
+                    speedVideo(-15000);
+                } else if(distanceX < 0 && Math.abs(distanceX) > 2) {
+                    speedVideo(15000);
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            return false;
+        }
+
+        public void clearStatus(){
+            mUpAndDown = false;
+            mLeftAndRight = false;
+        }
+    }
+
+    public void setOnFavoriteListener(OnFavoriteListener listener) {
+        mFavoriteListener = listener;
+        if(mCurrentScreenMode == MODE_FULL_SCREEN) {
+            updateFavoriteButton();
+            mFavoriteButton.setVisibility(VISIBLE);
+        }
+    }
+
+    public interface OnFavoriteListener {
+
+        boolean isFavorited(String videoPath);
+
+        void onFavorite(String videoPath);
     }
 }

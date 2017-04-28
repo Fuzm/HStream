@@ -4,13 +4,16 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
+import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
+import android.view.View;
 
 import com.stream.videoplayerlibrary.R;
 
@@ -20,9 +23,9 @@ import java.io.IOException;
  * Created by Fuzm on 2017/4/16 0016.
  */
 
-public class VideoTextureView extends TextureView implements MediaController.MediaPlayerControl {
+public class VideoTextureViewForOld extends TextureView implements MediaController.MediaPlayerControl {
 
-    private static final String TAG = VideoTextureView.class.getSimpleName();
+    private static final String TAG = VideoTextureViewForOld.class.getSimpleName();
 
     // all possible internal states
     private static final int STATE_ERROR = -1;
@@ -44,6 +47,7 @@ public class VideoTextureView extends TextureView implements MediaController.Med
     private Uri mUri;
 
     private MediaPlayer mMediaPlayer;
+    private MediaController mMediaController;
     private int mAudioSession;
     private int mVideoWidth;
     private int mVideoHeight;
@@ -80,21 +84,21 @@ public class VideoTextureView extends TextureView implements MediaController.Med
     }
 
 
-    public VideoTextureView(Context context) {
+    public VideoTextureViewForOld(Context context) {
         this(context, null);
     }
 
-    public VideoTextureView(Context context, AttributeSet attrs) {
+    public VideoTextureViewForOld(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public VideoTextureView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public VideoTextureViewForOld(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
         mVideoWidth = 0;
         mVideoHeight = 0;
 
-        this.setSurfaceTextureListener(TuMediaPlayerManager.instance());
+        this.setSurfaceTextureListener(mSurfaceTextureListener);
 
         setFocusable(true);
         setFocusableInTouchMode(true);
@@ -114,6 +118,24 @@ public class VideoTextureView extends TextureView implements MediaController.Med
         openVideo();
         requestLayout();
         invalidate();
+    }
+
+    public void setMediaController(MediaController controller) {
+        if (mMediaController != null) {
+            mMediaController.hide();
+        }
+        mMediaController = controller;
+        attachMediaController();
+    }
+
+    private void attachMediaController() {
+        if (mMediaPlayer != null && mMediaController != null) {
+            mMediaController.setMediaPlayer(this);
+            View anchorView = this.getParent() instanceof View ?
+                    (View)this.getParent() : this;
+            mMediaController.setAnchorView(anchorView);
+            mMediaController.setEnabled(isInPlaybackState());
+        }
     }
 
     @Override
@@ -215,6 +237,7 @@ public class VideoTextureView extends TextureView implements MediaController.Med
             mMediaPlayer.prepareAsync();
 
             mCurrentState = STATE_PREPARING;
+            attachMediaController();
         } catch (IOException ex) {
             Log.w(TAG, "Unable to open content: " + mUri, ex);
             mCurrentState = STATE_ERROR;
@@ -229,6 +252,14 @@ public class VideoTextureView extends TextureView implements MediaController.Med
             return;
         } finally {
             //mPendingSubtitleTracks.clear();
+        }
+    }
+
+    private void toggleMediaControlsVisiblity() {
+        if (mMediaController.isShowing()) {
+            mMediaController.hide();
+        } else {
+            mMediaController.show();
         }
     }
 
@@ -355,6 +386,22 @@ public class VideoTextureView extends TextureView implements MediaController.Med
         }
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        if (isInPlaybackState() && mMediaController != null) {
+            toggleMediaControlsVisiblity();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onTrackballEvent(MotionEvent ev) {
+        if (isInPlaybackState() && mMediaController != null) {
+            toggleMediaControlsVisiblity();
+        }
+        return false;
+    }
+
     private MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
         public void onPrepared(MediaPlayer mp) {
             mCurrentState = STATE_PREPARED;
@@ -364,6 +411,10 @@ public class VideoTextureView extends TextureView implements MediaController.Med
 
             if (mOnPreparedListener != null) {
                 mOnPreparedListener.onPrepared(mMediaPlayer);
+            }
+
+            if (mMediaController != null) {
+                mMediaController.setEnabled(true);
             }
 
             int seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
@@ -401,6 +452,9 @@ public class VideoTextureView extends TextureView implements MediaController.Med
         public void onCompletion(MediaPlayer mp) {
             mCurrentState = STATE_PLAYBACK_COMPLETED;
             mTargetState = STATE_PLAYBACK_COMPLETED;
+            if (mMediaController != null) {
+                mMediaController.hide();
+            }
             if (mOnCompletionListener != null) {
                 mOnCompletionListener.onCompletion(mMediaPlayer);
             }
@@ -414,6 +468,9 @@ public class VideoTextureView extends TextureView implements MediaController.Med
             Log.d(TAG, "Error: " + what + "," + extra);
             mCurrentState = STATE_ERROR;
             mTargetState = STATE_ERROR;
+            if (mMediaController != null) {
+                mMediaController.hide();
+            }
 
             /* If an error handler has been supplied, use it and finish. */
             if (mOnErrorListener != null) {
@@ -457,31 +514,34 @@ public class VideoTextureView extends TextureView implements MediaController.Med
         }
     };
 
-//    SurfaceTextureListener mSurfaceTextureListener = new SurfaceTextureListener() {
-//        @Override
-//        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-//            mSurfaceWidth = width;
-//            mSurfaceHeight = height;
-//            mSurface = new Surface(surface);
-//            openVideo();
-//        }
-//
-//        @Override
-//        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-//
-//        }
-//
-//        @Override
-//        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-//            mSurface = null;
-//            release(true);
-//            return true;
-//        }
-//
-//        @Override
-//        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-//
-//        }
-//    };
+    SurfaceTextureListener mSurfaceTextureListener = new SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+            mSurfaceWidth = width;
+            mSurfaceHeight = height;
+            mSurface = new Surface(surface);
+            openVideo();
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            mSurface = null;
+            if (mMediaController != null) {
+                mMediaController.hide();
+            }
+            release(true);
+            return true;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+
+        }
+    };
 
 }
