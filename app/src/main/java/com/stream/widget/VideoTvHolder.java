@@ -2,6 +2,7 @@ package com.stream.widget;
 
 import android.content.Context;
 import android.media.MediaPlayer;
+import android.support.v7.widget.AppCompatImageView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
@@ -30,6 +31,7 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
     private String mVideoUrl;
 
     public TuVideoPlayer mVideoPlayer;
+    public AppCompatImageView mDownloadButton;
 
     public VideoTvHolder(Context context, View itemView) {
         super(itemView);
@@ -37,6 +39,7 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
         mContext = context;
         mClient = HStreamApplication.getHsClient(context);
         mVideoPlayer = (TuVideoPlayer) itemView.findViewById(R.id.list_video_player);
+        mDownloadButton = (AppCompatImageView) itemView.findViewById(R.id.download_button);
     }
 
     public void requiredSourceInfo(String sourceUrl) {

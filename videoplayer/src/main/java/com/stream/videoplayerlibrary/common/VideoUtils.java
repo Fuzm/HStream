@@ -70,18 +70,18 @@ public class VideoUtils {
         return null;
     }
 
-    public static void saveProgress(Context context, String url, int progress) {
+    public static void saveProgress(Context context, String url, long progress) {
         SharedPreferences preferences =
                 context.getSharedPreferences(TU_PROGRESS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putInt(url, progress);
+        editor.putLong(url, progress);
         editor.apply();
     }
 
-    public static int getSavedProgress(Context context, String url){
+    public static long getSavedProgress(Context context, String url){
         SharedPreferences preferences =
                 context.getSharedPreferences(TU_PROGRESS, Context.MODE_PRIVATE);
-        return preferences.getInt(url, 0);
+        return preferences.getLong(url, 0);
     }
 
     public static String saveDrawable(Drawable drawable) {

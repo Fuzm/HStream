@@ -259,16 +259,7 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
 
             switch (msg.what) {
                 case HANDLER_PREPARE:
-
-//                    if(mUri == null || sSavedSurfaceTexture == null) {
-//                        return;
-//                    }
-
                     try {
-//                        if(mMediaPlayer != null) {
-//                            //mMediaPlayer.reset();
-//                            mMediaPlayer.release();
-//                        }
                         mMediaPlayer = new MediaPlayer();
                         mMediaPlayer.setOnPreparedListener(mPreparedListener);
                         mMediaPlayer.setOnInfoListener(mInfoListener);

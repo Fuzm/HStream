@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pd_pause" translatable="false">M14,19.14H18V5.14H14M6,19.14H10V5.14H6V19.14Z</string>
+    <string name="pd_play" translatable="false">M8,5.14V19.14L19,12.14L8,5.14Z</string>
+
+    <string name="pd_download" translatable="false">M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z</string>
+</resources>

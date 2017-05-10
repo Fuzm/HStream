@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
@@ -27,11 +26,14 @@ import com.stream.videoplayerlibrary.common.VideoUtils;
 import java.util.Formatter;
 import java.util.Locale;
 
+import tv.danmaku.ijk.media.player.IjkMediaPlayer;
+
 /**
  * Created by Fuzm on 2017/4/19 0019.
  */
 
-public final class TuVideoPlayer extends FrameLayout implements View.OnClickListener, View.OnTouchListener, VideoPlayer{
+public final class TuVideoPlayer extends FrameLayout
+        implements View.OnClickListener, View.OnTouchListener, VideoPlayer<IjkMediaPlayer>{
 
     private static final String TAG = TuVideoPlayer.class.getSimpleName();
 
@@ -51,7 +53,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     private int mCurrentScreenMode = MODE_NORMAL_SCREEN;
     private boolean mShowing = false;
     private int mShowTime = 3000;
-    private int mCurrentPosition = -1;
+    private long mCurrentPosition = -1;
     private int mCurrentBufferPercentage = 0;
     private int mSeekWhenPrepared = 0;
 
@@ -61,7 +63,8 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     private StringBuilder mFormatBuilder;
     private Formatter mFormatter;
 
-    private TuMediaPlayerManager mManager;
+    //private TuIjkMediaPlayerManager mManager;
+    private TuIjkMediaPlayerManager mManager;
     private TuVideoPlayer mParentPlayer;
     private ViewGroup mTextureViewContainer;
     private AppCompatImageView mThumb;
@@ -117,8 +120,8 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
                 return;
             }
 
-            int duration = mManager.getDuration();
-            int newPosition = (duration * progress) / MAX_PROGRESS;
+            long duration = mManager.getDuration();
+            long newPosition = (duration * progress) / MAX_PROGRESS;
             mManager.seekTo(newPosition);
             if(mTimeText != null) {
                 mTimeText.setText(stringForTime(newPosition));
@@ -141,7 +144,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     private final Runnable mShowProgress = new Runnable() {
         @Override
         public void run() {
-            int pos = setProgress();
+            long pos = setProgress();
             if (mShowing && mCurrentState == STATE_PLAYING) {
                 postDelayed(mShowProgress, MAX_PROGRESS - (pos % MAX_PROGRESS));
             }
@@ -153,7 +156,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         @Override
         public void run() {
             if(mCurrentState == STATE_PLAYING || mCurrentState == STATE_PAUSE) {
-                int oldPosition = mCurrentPosition;
+                long oldPosition = mCurrentPosition;
                 mCurrentPosition = mManager.getCurrentPosition();
                 if(oldPosition == mCurrentPosition && mCurrentState == STATE_PLAYING ) {
                     isWait = true;
@@ -196,7 +199,8 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         super(context, attrs, defStyleAttr);
 
         mContext = context;
-        mManager = TuMediaPlayerManager.instance();
+        //mManager = TuIjkMediaPlayerManager.instance();
+        mManager = TuIjkMediaPlayerManager.instance();
 
         initView();
     }
@@ -335,11 +339,11 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         if(!checkPrepared()) return;
         Log.d(TAG, "prepare mediaperl by instance-" + this.hashCode());
 
-        TuMediaPlayerManager.releaseManager(mManager.isCurrentVideoPlayer(this));
+        TuIjkMediaPlayerManager.releaseManager(mManager.isCurrentVideoPlayer(this));
         mManager.setVideoPath(mUrl);
         mManager.setVideoPlayer(this);
 
-        TextureView textureView = TuMediaPlayerManager.initTextureView(getContext());
+        TextureView textureView = TuIjkMediaPlayerManager.initTextureView(getContext());
         addTextureView(textureView);
     }
 
@@ -384,17 +388,17 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
                 mUrl != null);
     }
 
-    private int setProgress() {
-        int position = mManager.getCurrentPosition();
-        int duration = mManager.getDuration();
+    private long setProgress() {
+        long position = mManager.getCurrentPosition();
+        long duration = mManager.getDuration();
         if(mSeekBar != null) {
             if(duration > 0) {
-                int pos = MAX_PROGRESS * position / duration;
+                int pos = (int)(MAX_PROGRESS * position / duration);
                 mSeekBar.setProgress(pos);
             }
-            int percent = mCurrentBufferPercentage;
-            int second = percent * MAX_PROGRESS / 100;
-            mSeekBar.setSecondaryProgress(second);
+//            int percent = mCurrentBufferPercentage;
+//            int second = percent * MAX_PROGRESS / 100;
+//            mSeekBar.setSecondaryProgress(second);
             //Log.d(TAG, "percent : " + percent + ",second : " + second + ", secondary progress : " + mSeekBar.getSecondaryProgress());
         }
 
@@ -409,12 +413,12 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         return position;
     }
 
-    private String stringForTime(int timeMs) {
-        int totalSeconds = timeMs / 1000;
+    private String stringForTime(long timeMs) {
+        long totalSeconds = timeMs / 1000;
 
-        int seconds = totalSeconds % 60;
-        int minutes = (totalSeconds / 60) % 60;
-        int hours   = totalSeconds / 3600;
+        long seconds = totalSeconds % 60;
+        long minutes = (totalSeconds / 60) % 60;
+        long hours   = totalSeconds / 3600;
 
         mFormatBuilder.setLength(0);
         if (hours > 0) {
@@ -470,7 +474,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        mTextureViewContainer.removeView(TuMediaPlayerManager.getCurrentTextureView());
+        mTextureViewContainer.removeView(TuIjkMediaPlayerManager.getCurrentTextureView());
 
         ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -481,7 +485,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         //fullPlayer.mCurrentScreenMode = MODE_FULL_SCREEN;
         fullPlayer.mParentPlayer = this;
         fullPlayer.setCurrentStateAndUi(mCurrentState);
-        fullPlayer.addTextureView(TuMediaPlayerManager.getCurrentTextureView());
+        fullPlayer.addTextureView(TuIjkMediaPlayerManager.getCurrentTextureView());
         fullPlayer.updatePlayButton();
         fullPlayer.updateSrceenControlView(fullPlayer.mCurrentScreenMode);
         fullPlayer.setThumb(mThumb.getDrawable());
@@ -501,9 +505,9 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
 
         ViewGroup parent = (ViewGroup) this.getParent();
         parent.removeView(this);
-        mTextureViewContainer.removeView(TuMediaPlayerManager.getCurrentTextureView());
+        mTextureViewContainer.removeView(TuIjkMediaPlayerManager.getCurrentTextureView());
 
-        mParentPlayer.addTextureView(TuMediaPlayerManager.getCurrentTextureView());
+        mParentPlayer.addTextureView(TuIjkMediaPlayerManager.getCurrentTextureView());
         mParentPlayer.setCurrentStateAndUi(mCurrentState);
         mParentPlayer.updatePlayButton();
         mParentPlayer.updateSrceenControlView(mParentPlayer.mCurrentScreenMode);
@@ -583,7 +587,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     }
 
     public void updateFavoriteButton() {
-        if(mFavoriteListener != null && mFavoriteListener.isFavorited(mUrl)) {
+        if(mFavoriteListener != null && mFavoriteListener.isFavorited()) {
             mFavoriteButton.setImageResource(R.drawable.ic_favorite_24dp);
         } else {
             mFavoriteButton.setImageResource(R.drawable.ic_favorite_none_24dp);
@@ -591,7 +595,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     }
 
     @Override
-    public void onPrepared(MediaPlayer mp) {
+    public void onPrepared(IjkMediaPlayer mp) {
         if(mCurrentState != STATE_PREPARING) {
             Log.d(TAG, "current state is not preparing, cannot play the video");
             return;
@@ -601,7 +605,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
             mManager.seekTo(mSeekWhenPrepared);
             mSeekWhenPrepared = 0;
         } else {
-            int position = VideoUtils.getSavedProgress(getContext(), mUrl);
+            long position = VideoUtils.getSavedProgress(getContext(), mUrl);
             if (position != 0) {
                 mManager.seekTo(position);
             }
@@ -612,32 +616,41 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     }
 
     @Override
-    public boolean onInfo(MediaPlayer mp, int arg1, int arg2) {
+    public boolean onInfo(IjkMediaPlayer mp, int arg1, int arg2) {
         return false;
     }
 
     @Override
-    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+    public void onBufferingUpdate(IjkMediaPlayer mp, int percent) {
+        Log.d(TAG, "buffer percent: " + percent);
         mCurrentBufferPercentage = percent;
+
+        int second = percent * MAX_PROGRESS / 100;
+        mSeekBar.setSecondaryProgress(second);
     }
 
     @Override
-    public void onCompletion(MediaPlayer mp) {
+    public void onCompletion(IjkMediaPlayer mp) {
         Log.d(TAG, "completion mp : " + mp.hashCode());
 
         if (mCurrentScreenMode == STATE_PLAYING) {
-            int position = mManager.getCurrentPosition();
+            long position = mManager.getCurrentPosition();
             VideoUtils.saveProgress(getContext(), mUrl, position);
         }
 
         //初始化状态
         setCurrentStateAndUi(STATE_IDLE);
-        // 清理缓存变量
-        mTextureViewContainer.removeView(TuMediaPlayerManager.getCurrentTextureView());
     }
 
     @Override
-    public boolean onError(MediaPlayer mp, int what, int extra) {
+    public boolean onError(IjkMediaPlayer mp, int what, int extra) {
+        //移除监听
+        removeCallbacks(mBufferWait);
+        removeCallbacks(mFateOut);
+        removeCallbacks(mShowProgress);
+        //初始化状态
+        setCurrentStateAndUi(STATE_IDLE);
+        Toast.makeText(mContext, "无法播放该视频", Toast.LENGTH_SHORT).show();
         return false;
     }
 
@@ -645,7 +658,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
     public void onRelease() {
         Log.d(TAG, "release video player : " + this.hashCode());
         if (mCurrentState == STATE_PLAYING) {
-            int position = mManager.getCurrentPosition();
+            long position = mManager.getCurrentPosition();
             VideoUtils.saveProgress(getContext(), mUrl, position);
         }
 
@@ -656,7 +669,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
         //初始化状态
         setCurrentStateAndUi(STATE_IDLE);
         // 清理缓存变量
-        mTextureViewContainer.removeView(TuMediaPlayerManager.getCurrentTextureView());
+        mTextureViewContainer.removeView(TuIjkMediaPlayerManager.getCurrentTextureView());
     }
 
     @Override
@@ -673,13 +686,13 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
      * 回退事件
      */
     public static boolean backPress() {
-        TuVideoPlayer player = (TuVideoPlayer) TuMediaPlayerManager.instance().getVideoPlayer();
+        TuVideoPlayer player = (TuVideoPlayer) TuIjkMediaPlayerManager.instance().getVideoPlayer();
         if(player != null) {
             if(player.getParentPlayer() != null) {
                 player.clearFullScreen();
                 return true;
             } else {
-                TuMediaPlayerManager.releaseManager();
+                TuIjkMediaPlayerManager.releaseManager();
                 return false;
             }
         } else {
@@ -737,7 +750,7 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
 
     //快进
     public void speedVideo(int mesc) {
-        int pos = mManager.getCurrentPosition();
+        long pos = mManager.getCurrentPosition();
         pos += mesc; // milliseconds
         mManager.seekTo(pos);
     }
@@ -749,7 +762,6 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
 
         @Override
         public boolean onDown(MotionEvent e) {
-
             return false;
         }
 
@@ -818,8 +830,8 @@ public final class TuVideoPlayer extends FrameLayout implements View.OnClickList
 
     public interface OnFavoriteListener {
 
-        boolean isFavorited(String videoPath);
+        boolean isFavorited();
 
-        void onFavorite(String videoPath);
+        void onFavorite(String url);
     }
 }

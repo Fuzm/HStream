@@ -15,7 +15,7 @@ public class VideoInfo implements Parcelable{
     public String title;
     public String thumb;
     public String url;
-    public List<VideoSourceInfo>  mSourceInfoList;
+    //public List<VideoSourceInfo>  mSourceInfoList;
 
     public VideoInfo() {}
 
@@ -24,7 +24,7 @@ public class VideoInfo implements Parcelable{
         this.title = in.readString();
         this.thumb = in.readString();
         this.url = in.readString();
-        this.mSourceInfoList = in.readArrayList(VideoSourceInfo.class.getClassLoader());
+        //this.mSourceInfoList = in.readArrayList(VideoSourceInfo.class.getClassLoader());
     }
 
     @Override
@@ -33,7 +33,7 @@ public class VideoInfo implements Parcelable{
         dest.writeString(this.title);
         dest.writeString(this.thumb);
         dest.writeString(this.url);
-        dest.writeList(mSourceInfoList);
+        //dest.writeList(mSourceInfoList);
     }
 
     @Override

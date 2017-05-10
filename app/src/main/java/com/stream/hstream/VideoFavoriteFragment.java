@@ -1,19 +1,15 @@
 package com.stream.hstream;
 
 import android.content.Context;
-import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 
-import com.stream.data.StreamDataBase;
-import com.stream.data.model.Favorite;
+import com.stream.dao.Favorite;
 import com.stream.hstream.adapter.SimpleHolder;
 import com.stream.scene.SceneFragment;
 import com.stream.util.LoadImageHelper;
@@ -37,10 +33,15 @@ public class VideoFavoriteFragment extends SceneFragment {
 
         mListView = (ListView) view.findViewById(R.id.list_favorites);
 
-        List<Favorite> data = StreamDataBase.getInstance(getContext()).queryFavorites();
+        List<Favorite> data = HStreamDB.queryAllFavorite();
         mListView.setAdapter(new FavoriteListAdapter(LayoutInflater.from(getContext()), getContext(), data));
 
         return view;
+    }
+
+    @Override
+    public int getNavCheckedItem() {
+        return R.id.nav_favorite;
     }
 
     private class FavoriteListAdapter extends com.stream.hstream.adapter.SimpleAdapter<VideoHolder> {
@@ -78,16 +79,15 @@ public class VideoFavoriteFragment extends SceneFragment {
         @Override
         public void onBindViewHolder(VideoHolder holder, int position) {
             Favorite favorite = mData.get(position);
-            holder.mVideoPlayer.setUp(favorite.getVideoPath(), favorite.getTitle(), TuVideoPlayer.MODE_NORMAL_SCREEN);
+            holder.mVideoPlayer.setUp(favorite.getVideoUrl(), favorite.getTitle(), TuVideoPlayer.MODE_NORMAL_SCREEN);
 
-            if(favorite.getImagePath().startsWith("http://") || favorite.getImagePath().startsWith("https://")) {
+            if(favorite.getThumb().startsWith("http://") || favorite.getThumb().startsWith("https://")) {
                 LoadImageHelper.with(mContext)
-                        .load(favorite.getImagePath(), favorite.getImagePath())
+                        .load(favorite.getThumb(), favorite.getThumb())
                         .into(holder.mVideoPlayer.getThumb());
             } else {
-                holder.mVideoPlayer.setThumb(VideoUtils.getDrawableFromPath(mContext, favorite.getImagePath()));
+                holder.mVideoPlayer.setThumb(VideoUtils.getDrawableFromPath(mContext, favorite.getThumb()));
             }
-
         }
     }
 

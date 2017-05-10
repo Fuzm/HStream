@@ -28,13 +28,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".VideoPlayActivity"
-                  android:configChanges="orientation"
-                  android:screenOrientation="landscape"
-                  android:theme="@style/AppTheme.NoActionBar"
-                  android:launchMode="singleTask">
-
-        </activity>
+        <service android:name="com.stream.download.DownloadService" />
     </application>
 
 </manifest>

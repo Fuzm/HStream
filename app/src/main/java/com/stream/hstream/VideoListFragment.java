@@ -32,6 +32,7 @@ import com.stream.client.data.VideoInfo;
 import com.stream.client.data.VideoSourceInfo;
 import com.stream.client.parser.VideoListParser;
 import com.stream.client.parser.VideoSourceParser;
+import com.stream.download.DownloadService;
 import com.stream.drawable.AddDeleteDrawable;
 import com.stream.drawable.DrawerArrowDrawable;
 import com.stream.scene.Announcer;
@@ -109,6 +110,11 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
 
         outState.putBoolean(KEY_HAS_FIRST_REFRESH, mHasFirstRefresh);
         outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder);
+    }
+
+    @Override
+    public int getNavCheckedItem() {
+        return R.id.nav_home;
     }
 
     @Nullable
@@ -192,15 +198,13 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
             return false;
         }
 
-        //mClickVideo = mHelper.getDataAt(position);
-        //requiredDetailInfo();
-//
-//        Bundle args = new Bundle();
-//        args.putParcelable(VideoDetailFragment.KEY_DETAIL_INFO, info);
-//
-//        Announcer announcer = new Announcer(VideoDetailFragment.class);
-//        announcer.setArgs(args);
-//        startScene(announcer);
+        VideoInfo videoInfo = mHelper.getDataAt(position);
+        if(view.getId() == R.id.download_button) {
+            Intent intent = new Intent(getActivity(), DownloadService.class);
+            intent.putExtra(DownloadService.KEY_VIDEO_INFO, videoInfo);
+            getActivity().startService(intent);
+        }
+
         return true;
     }
 
@@ -414,6 +418,17 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         @Override
         public int getItemCount() {
             return null != mHelper ? mHelper.size() : 0;
+        }
+
+        @Override
+        public void onItemClick(View view, int position) {
+            VideoInfo videoInfo = mHelper.getDataAt(position);
+            if(view.getId() == R.id.download_button) {
+                Intent intent = new Intent(getActivity(), DownloadService.class);
+                intent.setAction(DownloadService.ACTION_START);
+                intent.putExtra(DownloadService.KEY_VIDEO_INFO, videoInfo);
+                getActivity().startService(intent);
+            }
         }
     }
 

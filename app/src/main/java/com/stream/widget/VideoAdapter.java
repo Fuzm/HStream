@@ -6,11 +6,12 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import com.stream.client.data.VideoInfo;
-import com.stream.data.StreamDataBase;
-import com.stream.data.model.Favorite;
+import com.stream.dao.Favorite;
+import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
 import com.stream.util.LoadImageHelper;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
@@ -42,23 +43,30 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
 
     @Override
     public VideoTvHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        //return new VideoHolder(mContext, mInflater.inflate(R.layout.item_video_grid, parent, false));
         return new VideoTvHolder(mContext, mInflater.inflate(R.layout.item_video_list, parent, false));
     }
 
-    @Override
-    public void onBindViewHolder(VideoTvHolder holder, int position) {
+       @Override
+    public void onBindViewHolder(VideoTvHolder holder, final int position) {
         VideoInfo videoInfo = getDataAt(position);
 
         holder.mVideoPlayer.setUp(null, videoInfo.title, TuVideoPlayer.MODE_NORMAL_SCREEN);
         holder.mVideoPlayer.setOnFavoriteListener(new FavoriteVideoListener(videoInfo));
         LoadImageHelper.with(mContext)
-                .load(videoInfo.thumb, videoInfo.thumb)
-                .into(holder.mVideoPlayer.getThumb());
+            .load(videoInfo.thumb, videoInfo.thumb)
+            .into(holder.mVideoPlayer.getThumb());
         holder.requiredSourceInfo(videoInfo.url);
+        holder.mDownloadButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onItemClick(v, position);
+            }
+        });
     }
 
     public abstract VideoInfo getDataAt(int position);
+
+    public abstract void onItemClick(View view, int position);
 
     public class FavoriteVideoListener implements TuVideoPlayer.OnFavoriteListener {
 
@@ -69,22 +77,24 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
         }
 
         @Override
-        public boolean isFavorited(String videoPath) {
-            return StreamDataBase.getInstance(mContext).getFavorite(videoPath) != null;
+        public boolean isFavorited() {
+            return HStreamDB.existeFavorite(mVideoInfo.token);
         }
 
         @Override
-        public void onFavorite(String videoPath) {
-            if(!isFavorited(videoPath)) {
+        public void onFavorite(String url) {
+            if(HStreamDB.existeFavorite(mVideoInfo.token)) {
                 Favorite favorite = new Favorite();
+                favorite.setToken(mVideoInfo.token);
                 favorite.setTitle(mVideoInfo.title);
-                favorite.setImagePath(mVideoInfo.thumb);
-                favorite.setSourcePath(mVideoInfo.url);
-                favorite.setVideoPath(videoPath);
+                favorite.setThumb(mVideoInfo.thumb);
+                favorite.setSourceUrl(mVideoInfo.url);
+                favorite.setSourceUrl(url);
+                favorite.setTime(System.currentTimeMillis());
 
-                StreamDataBase.getInstance(mContext).addFavorite(favorite);
+                HStreamDB.putFavorite(favorite);
             } else {
-                StreamDataBase.getInstance(mContext).removeFavorite(videoPath);
+                HStreamDB.removeFavorite(mVideoInfo.token);
             }
         }
     }

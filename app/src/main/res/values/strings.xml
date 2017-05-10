@@ -44,5 +44,21 @@
     <!-- Menu -->
     <string name="menu_home">Home</string>
     <string name="menu_favorite">Favorite</string>
+    <string name="menu_download">Download</string>
+
+    <!-- download -->
+    <string name="stat_download_action_stop_all">Stop All</string>
+    <string name="stat_download_done_title">Download Finished</string>
+    <string name="stat_download_loading_title">Downloading</string>
+    <string name="download_state_none">Idle</string>
+    <string name="download_state_wait">Waiting</string>
+    <string name="download_state_downloading">Downloading</string>
+    <string name="download_state_downloaded">Downloaded</string>
+    <string name="download_state_failed">Failed</string>
+    <string name="download_state_failed_2">%d incomplete</string>
+    <string name="download_state_finish">Done</string>
+
+    <string name="download_start_all">Start All</string>
+    <string name="download_stop_all">Stop All</string>
 
 </resources>

@@ -17,11 +17,14 @@
 package com.stream.scene;
 
 import android.os.Bundle;
+import android.support.annotation.IdRes;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.view.View;
 import android.widget.Toast;
 
 import com.hippo.yorozuya.collect.IntList;
@@ -120,6 +123,24 @@ public class SceneFragment extends Fragment {
         if (activity instanceof StageActivity) {
             ((StageActivity) activity).finishScene(this);
         }
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        setNavCheckedItem(getNavCheckedItem());
+    }
+
+    public void setNavCheckedItem(@IdRes int resId) {
+        FragmentActivity activity = getActivity();
+        if(activity instanceof MainActivity) {
+            ((MainActivity) activity).setNavCheckedItem(resId);
+        }
+    }
+
+    public int getNavCheckedItem() {
+        return 0;
     }
 
 }

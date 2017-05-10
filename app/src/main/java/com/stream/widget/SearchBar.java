@@ -24,13 +24,15 @@ import android.widget.TextView;
 import com.hippo.yorozuya.AnimationUtils;
 import com.hippo.yorozuya.MathUtils;
 import com.hippo.yorozuya.SimpleAnimatorListener;
-import com.stream.data.StreamDataBase;
+import com.stream.dao.Suggestion;
+import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
 import com.stream.widget.view.ViewTransition;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Created by Fuzm on 2017/4/8 0008.
@@ -59,8 +61,6 @@ public class SearchBar extends FrameLayout implements View.OnClickListener,
     private List<String> mSuggestionList;
     private ArrayAdapter mSuggestionAdapter;
 
-    private StreamDataBase mDataBase;
-
     public SearchBar(Context context) {
         super(context);
         init(context);
@@ -78,8 +78,6 @@ public class SearchBar extends FrameLayout implements View.OnClickListener,
 
     public void init(Context context) {
         setBackgroundResource(R.drawable.card_white_no_padding_2dp);
-
-        mDataBase = StreamDataBase.getInstance(context);
 
         View view = LayoutInflater.from(context).inflate(R.layout.widget_search_bar, this);
         mSearchMenu = (ImageView) view.findViewById(R.id.search_menu);
@@ -112,8 +110,8 @@ public class SearchBar extends FrameLayout implements View.OnClickListener,
         list.setOnLongClickListener(new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                String suggestion = mEditText.getText().toString();
-                mDataBase.deleteSuggestion(suggestion);
+                String query = mEditText.getText().toString();
+                HStreamDB.deleteSuggestionByQuery(query);
                 updateSuggestions();
                 return false;
             }
@@ -239,7 +237,12 @@ public class SearchBar extends FrameLayout implements View.OnClickListener,
 
     public void updateSuggestions() {
         String prefix = mEditText.getText().toString();
-        String[] suggestions = mDataBase.querySuggestions(prefix);
+        List<Suggestion> suggestionList = HStreamDB.searchSuggestionByPrefit(prefix);
+        String[] suggestions = new String[suggestionList.size()];
+        for(int i=0; i<suggestionList.size(); i++) {
+            suggestions[i] = suggestionList.get(i).getQuery();
+        }
+
         mSuggestionList.clear();
         Collections.addAll(mSuggestionList, suggestions);
 
@@ -263,7 +266,10 @@ public class SearchBar extends FrameLayout implements View.OnClickListener,
         //if(TextUtils.isEmpty(query)) {
         //    return;
         //}
-        mDataBase.addSuggestion(query);
+        Suggestion suggestion = new Suggestion();
+        suggestion.setQuery(query);
+        suggestion.setDate(System.currentTimeMillis());
+        HStreamDB.addSuggestion(suggestion);
         mHelper.onApplySearch(query);
     }
 

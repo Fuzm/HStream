@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:background="@drawable/card_background_no_padding"
+              android:layout_margin="5dp">
+
+    <com.stream.widget.LoadImageView
+        android:id="@+id/download_thumb"
+        android:layout_width="80dp"
+        android:layout_height="100dp"
+        android:scaleType="fitCenter"/>
+
+    <TextView
+        android:text="sdfasdfasdfasdfsdfsfsd"
+        android:id="@+id/download_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="4dp"
+        android:layout_toRightOf="@id/download_thumb"
+        android:textSize="18dp"/>
+
+    <TextView
+        android:text="sdfasdfasdfasdfsdfsfsd"
+        android:id="@+id/speed_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/download_title"
+        android:layout_alignBottom="@id/download_thumb"
+        android:layout_marginBottom="9dp"
+        android:paddingBottom="2dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="2dp"/>
+
+    <FrameLayout
+        android:id="@+id/download_actions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/download_thumb"
+        android:layout_alignParentRight="true"
+        android:paddingRight="8dp">
+
+        <ImageView
+            android:id="@+id/start"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            app:srcCompat="@drawable/v_play_x24"/>
+
+        <ImageView
+            android:id="@+id/stop"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            app:srcCompat="@drawable/v_pause_x24"
+            android:visibility="gone"/>
+    </FrameLayout>
+
+    <ProgressBar
+        android:id="@+id/download_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/download_title"
+        android:layout_above="@id/download_actions"
+        android:maxHeight="0.5dp"
+        android:progress="50"/>
+
+    <TextView
+        android:id="@+id/total_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/download_title"
+        android:layout_above="@id/download_actions"
+        android:visibility="visible"/>
+
+</RelativeLayout>

@@ -21,4 +21,8 @@
     <!-- video -->
     <color name="time_text_light">#ffffff</color>
     <color name="video_backgroun_dark">#000000</color>
+
+    <!-- shadow -->
+    <color name="shadow_light">#38000000</color>
+
 </resources>

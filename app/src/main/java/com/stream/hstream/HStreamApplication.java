@@ -4,10 +4,12 @@ import android.app.Application;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import com.hippo.beerbelly.SimpleDiskCache;
 import com.hippo.conaco.Conaco;
 import com.hippo.image.ImageBitmap;
 import com.hippo.yorozuya.OSUtils;
 import com.stream.client.HsClient;
+import com.stream.download.DownloadManager;
 import com.stream.okhttp.MobileRequestBuilder;
 
 import java.io.File;
@@ -37,10 +39,13 @@ public class HStreamApplication extends Application {
     private HsClient mHsClient;
     private Conaco<ImageBitmap> mConaco;
     private ImageBitmapHelper mImageBitmapHelper;
+    private DownloadManager mDownloadManager;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        HStreamDB.initialize(this);
     }
 
     public static OkHttpClient getOkHttpClient(Context context) {
@@ -97,6 +102,14 @@ public class HStreamApplication extends Application {
         return application.mImageBitmapHelper;
     }
 
+    public static DownloadManager getDownloadManager(Context context) {
+        HStreamApplication application = ((HStreamApplication) context.getApplicationContext());
+        if (application.mDownloadManager == null) {
+            application.mDownloadManager = new DownloadManager(application);
+        }
+        return application.mDownloadManager;
+    }
+
     public static void main(String[] args) throws IOException {
         OkHttpClient client = new OkHttpClient.Builder()
                 .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.1.101", 9666)))
@@ -141,4 +154,6 @@ public class HStreamApplication extends Application {
 //        System.out.println(response.headers());
 //        System.out.println(response.body().string());
     }
+
+
 }

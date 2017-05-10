@@ -2,6 +2,7 @@ package com.stream.client.parser;
 
 import com.stream.client.data.VideoInfo;
 import com.stream.hstream.Setting;
+import com.stream.util.StringUtils;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -69,12 +70,12 @@ public class VideoListParser {
             String thumb = e.child(0).child(0).child(0).attr("src");
             String title = e.child(0).child(0).child(0).attr("title");
 
-//            VideoSourceUrlParser.Result result = VideoSourceUrlParser.parse(url);
-//            if (null == result) {
-//                return null;
-//            }
+            VideoSourceUrlParser.Result result = VideoSourceUrlParser.parse(url);
+            if (null == result) {
+                return null;
+            }
 
-            info.token = thumb;
+            info.token = result.token;
             info.title = title;
             info.thumb = thumb;
             info.url = url;

@@ -1,5 +1,6 @@
 package com.stream.hstream;
 
+import android.support.annotation.IdRes;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -14,11 +15,14 @@ public class MainActivity extends StageActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private DrawerLayout mDrawerLayout;
+    private NavigationView mNavigationView;
 
     static {
         registerLaunchMode(VideoListFragment.class, SceneFragment.LAUNCH_MODE_SINGLE_TOP);
         registerLaunchMode(VideoDetailFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
         registerLaunchMode(VideoFavoriteFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
+        registerLaunchMode(VideoFavoriteFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
+        registerLaunchMode(VideoDownloadFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
     }
 
     @Override
@@ -45,8 +49,8 @@ public class MainActivity extends StageActivity
 //        drawer.setDrawerListener(toggle);
 //        toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        mNavigationView = (NavigationView) findViewById(R.id.nav_view);
+        mNavigationView.setNavigationItemSelectedListener(this);
     }
 
     @Override
@@ -91,6 +95,16 @@ public class MainActivity extends StageActivity
         return super.onOptionsItemSelected(item);
     }
 
+    public void setNavCheckedItem(@IdRes int resId) {
+        if(mNavigationView != null) {
+            if(resId != 0) {
+                mNavigationView.setCheckedItem(resId);
+            } else {
+                mNavigationView.setCheckedItem(R.id.nav_stub);
+            }
+        }
+    }
+
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -102,8 +116,8 @@ public class MainActivity extends StageActivity
         } else if (id == R.id.nav_favorite) {
             startScene(new Announcer(VideoFavoriteFragment.class));
             // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
+        } else if (id == R.id.nav_download) {
+            startScene(new Announcer(VideoDownloadFragment.class));
         } else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {

@@ -11,9 +11,9 @@
             android:icon="@drawable/ic_menu_favorite"
             android:title="@string/menu_favorite"/>
         <item
-            android:id="@+id/nav_gallery"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="Gallery"/>
+            android:id="@+id/nav_download"
+            android:icon="@drawable/v_download_black_x24"
+            android:title="@string/menu_download"/>
         <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_menu_slideshow"
@@ -22,6 +22,11 @@
             android:id="@+id/nav_manage"
             android:icon="@drawable/ic_menu_manage"
             android:title="Tools"/>
+
+        <item
+            android:id="@+id/nav_stub"
+            android:title="stub"
+            android:visible="false"/>
     </group>
 
 </menu>
