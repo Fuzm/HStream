@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="fab_translation_y" type="id"/>
+    <item name="fab_translation_y_animator" type="id"/>
+
+</resources>

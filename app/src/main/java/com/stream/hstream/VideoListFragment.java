@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
@@ -17,12 +16,10 @@ import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ImageSpan;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.stream.client.HsClient;
@@ -35,10 +32,10 @@ import com.stream.client.parser.VideoSourceParser;
 import com.stream.download.DownloadService;
 import com.stream.drawable.AddDeleteDrawable;
 import com.stream.drawable.DrawerArrowDrawable;
-import com.stream.scene.Announcer;
 import com.stream.scene.SceneFragment;
 import com.stream.util.AppHelper;
 import com.stream.util.DrawableManager;
+import com.stream.videoplayerlibrary.tv.TuIjkMediaPlayerManager;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 import com.stream.widget.ContentLayout;
 import com.stream.widget.EditTextDialogBuilder;
@@ -506,6 +503,8 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     @Override
     public void onDestroy() {
         super.onDestroy();
+
+        TuIjkMediaPlayerManager.releaseManager();
 
         if(mClient != null) {
             mClient = null;

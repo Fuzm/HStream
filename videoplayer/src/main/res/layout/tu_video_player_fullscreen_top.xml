@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <LinearLayout
         android:orientation="horizontal"
@@ -35,7 +36,7 @@
             android:id="@+id/favorite_button"
             android:layout_height="@dimen/mc_middle_size"
             android:layout_width="@dimen/mc_middle_size"
-            android:src="@drawable/ic_favorite_none_24dp"
+            app:srcCompat="@drawable/ic_favorite_none_24dp"
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="10dp"
             android:visibility="gone"/>

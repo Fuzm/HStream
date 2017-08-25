@@ -52,9 +52,7 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
 
         holder.mVideoPlayer.setUp(null, videoInfo.title, TuVideoPlayer.MODE_NORMAL_SCREEN);
         holder.mVideoPlayer.setOnFavoriteListener(new FavoriteVideoListener(videoInfo));
-        LoadImageHelper.with(mContext)
-            .load(videoInfo.thumb, videoInfo.thumb)
-            .into(holder.mVideoPlayer.getThumb());
+        holder.setThumb(mContext, videoInfo.token, videoInfo.thumb);
         holder.requiredSourceInfo(videoInfo.url);
         holder.mDownloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -83,13 +81,13 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
 
         @Override
         public void onFavorite(String url) {
-            if(HStreamDB.existeFavorite(mVideoInfo.token)) {
+            if(!HStreamDB.existeFavorite(mVideoInfo.token)) {
                 Favorite favorite = new Favorite();
                 favorite.setToken(mVideoInfo.token);
                 favorite.setTitle(mVideoInfo.title);
                 favorite.setThumb(mVideoInfo.thumb);
                 favorite.setSourceUrl(mVideoInfo.url);
-                favorite.setSourceUrl(url);
+                favorite.setVideoUrl(url);
                 favorite.setTime(System.currentTimeMillis());
 
                 HStreamDB.putFavorite(favorite);

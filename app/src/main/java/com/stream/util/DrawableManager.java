@@ -2,6 +2,8 @@ package com.stream.util;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.AppCompatDrawableManager;
 
 /**
@@ -10,9 +12,9 @@ import android.support.v7.widget.AppCompatDrawableManager;
 
 public final class DrawableManager {
 
-    public static final AppCompatDrawableManager sManager = new AppCompatDrawableManager();
+    public static final AppCompatDrawableManager sManager = AppCompatDrawableManager.get();
 
-    public static Drawable getDrawable(Context context, int resId) {
+    public static Drawable getDrawable(@NonNull Context context, @DrawableRes int resId) {
         return sManager.getDrawable(context, resId);
     }
 }

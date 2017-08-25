@@ -1,32 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.DrawerLayout
+<android.support.design.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    tools:openDrawer="start">
+    android:layout_height="match_parent">
 
-    <!--<include-->
-        <!--layout="@layout/app_bar_main"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"/>-->
-
-    <FrameLayout
-        android:id="@+id/fragment_container"
+    <com.stream.widget.EhDrawerLayout
+        android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="@dimen/content_vertical_margin"/>
+        android:fitsSystemWindows="true">
 
-    <android.support.design.widget.NavigationView
-        android:id="@+id/nav_view"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:fitsSystemWindows="true"
-        app:headerLayout="@layout/nav_header_main"
-        app:menu="@menu/activity_main_drawer"/>
+        <com.stream.widget.EhStageLayout
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
 
-</android.support.v4.widget.DrawerLayout>
+        <android.support.design.widget.NavigationView
+            android:id="@+id/nav_view"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="start"
+            app:headerLayout="@layout/nav_header_main"
+            app:menu="@menu/activity_main_drawer"/>
+
+    </com.stream.widget.EhDrawerLayout>
+</android.support.design.widget.CoordinatorLayout>
+
+

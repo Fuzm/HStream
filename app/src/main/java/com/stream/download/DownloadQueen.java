@@ -1,18 +1,32 @@
 package com.stream.download;
 
+import android.icu.text.IDNA;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.hippo.yorozuya.IntIdGenerator;
 import com.stream.client.EhRequestBuilder;
 import com.stream.hstream.Setting;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -31,9 +45,7 @@ public class DownloadQueen {
 
     private static final String TAG = DownloadQueen.class.getSimpleName();
 
-    private static final Pattern File_PATTERN = Pattern.compile("([^/?=]*\\.mp4)");
-    private static final String EXTENSIONG = "mp4";
-    private static final int MAX_WORKER_SIZE = 5;
+    private static final int MAX_WORKER_SIZE = 3;
 
     private static IntIdGenerator sIntIdGenerator = new IntIdGenerator();
     private static DownloadQueen sQueen ;
@@ -42,21 +54,23 @@ public class DownloadQueen {
     private OkHttpClient mHttpClient;
 
     private Queue<WorkInfo> mWorkInfoLinkedList;
-    private HashMap<Integer, WorkInfo> mExecuteWorkMap;
+    private ConcurrentHashMap<Integer, WorkInfo> mExecuteWorkMap;
+    private Set<Integer> mInterruptedList;
     private DownloadWorkListener mWorkListener;
     private Object mWorkerLock = new Object();
     private int mWorkerCount;
 
     private DownloadQueen(OkHttpClient client) {
         mWorkInfoLinkedList = new LinkedList<>();
-        mExecuteWorkMap = new HashMap<>();
+        mExecuteWorkMap = new ConcurrentHashMap<>();
+        mInterruptedList = new HashSet<>();
         mHttpClient = client;
         mWorkerPoolExecutor = new ThreadPoolExecutor(MAX_WORKER_SIZE, MAX_WORKER_SIZE,
                 0, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
     }
 
     public static DownloadQueen obtainQueen(OkHttpClient client) {
-        if(sQueen != null) {
+        if(sQueen == null) {
             sQueen = new DownloadQueen(client);
         }
 
@@ -64,7 +78,18 @@ public class DownloadQueen {
     }
 
     public static WorkInfo buildWork(String filename, String fileurl) {
+        if(TextUtils.isEmpty(filename)) {
+            throw new NullPointerException("filename is null");
+        }
         return new WorkInfo(filename, fileurl);
+    }
+
+    public boolean isIdle() {
+        if(mWorkInfoLinkedList.isEmpty() && mExecuteWorkMap.isEmpty()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void regiesteWork(WorkInfo info) {
@@ -81,37 +106,58 @@ public class DownloadQueen {
         }
     }
 
-    private void start() {
+    public void start() {
         synchronized (mWorkerLock) {
             if (null == mWorkerPoolExecutor) {
                 Log.e(TAG, "Try to start worker after stopped");
                 return;
             }
 
-            for(; mWorkerCount < MAX_WORKER_SIZE; mWorkerCount++) {
+//            for(; mWorkerCount < MAX_WORKER_SIZE; mWorkerCount++) {
+//                mWorkerPoolExecutor.execute(new Worker());
+//            }
+            if (mWorkerCount < MAX_WORKER_SIZE) {
+                mWorkerCount++;
                 mWorkerPoolExecutor.execute(new Worker());
             }
         }
     }
 
-    private void stopWork(WorkInfo info) {
+    public void stopWork(WorkInfo info) {
         unregiesteWork(info);
-        synchronized (mExecuteWorkMap) {
+
+        //synchronized (mExecuteWorkMap) {
             if(mExecuteWorkMap.containsKey(info.getWId())) {
-                info.isInterrupted = true;
+                synchronized (mInterruptedList) {
+                    mInterruptedList.add(info.getWId());
+                }
             }
-        }
+        //}
     }
 
-    private void stopAll() {
+    public void stopAll() {
         synchronized (mWorkInfoLinkedList) {
             mWorkInfoLinkedList.clear();
         }
-        mWorkerPoolExecutor.shutdownNow();
+
+        //synchronized (mExecuteWorkMap) {
+            for(Integer workId : mExecuteWorkMap.keySet()){
+                synchronized (mInterruptedList) {
+                    mInterruptedList.add(workId);
+                }
+            }
+        //}
+        //mWorkerPoolExecutor.shutdownNow();
     }
 
     public void setDownloadWorkListener(DownloadWorkListener listener) {
         mWorkListener = listener;
+    }
+
+    public void notifyStart(WorkInfo workInfo) {
+        if(mWorkListener != null) {
+            mWorkListener.onStart(workInfo);
+        }
     }
 
     public void notifyDownloading(WorkInfo workInfo, long contentLength, long remainSize, int bytesRead) {
@@ -138,64 +184,6 @@ public class DownloadQueen {
         }
     }
 
-    private boolean checkExtension(String extension){
-        if(extension.toLowerCase().equals(EXTENSIONG)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private String getFileNameFromUrl(String url) {
-        Matcher m = File_PATTERN.matcher(url);
-        String name = null;
-        if(m.find()) {
-            name = m.group(0);
-        }
-        if(name == null || name.length() == 0){
-            name = getFileNameFromUrl2(url);
-        }
-        Log.d(TAG, "Get name from url is: " + name);
-        return name;
-    }
-
-    private String getFileNameFromUrl2(String url) {
-        String name = null;
-        String extension = "." + EXTENSIONG;
-        if(url == null || url.length() == 0) {
-            int index = url.indexOf(extension);
-            int sIndex = -1;
-            if(index != -1) {
-                sIndex = name.indexOf("=", -index);
-            }
-            if(sIndex == -1) {
-                sIndex = name.indexOf("/", -index);
-            }
-            if(sIndex == -1) {
-                if(index > 100){
-                    sIndex = index - 100;
-                } else {
-                    sIndex = 0;
-                }
-            }
-            name = url.substring(sIndex, index+extension.length());
-        }
-        return name;
-    }
-
-    private String getFileName(WorkInfo info) {
-        if(info.getFileName() == null || info.getFileName().length() == 0) {
-            String name = getFileNameFromUrl(info.getFileUrl());
-            return Setting.getDownloadDir() + name;
-        } else {
-            if(info.getFileName().endsWith(EXTENSIONG)) {
-                return Setting.getDownloadDir() + info.getFileName();
-            } else {
-                return Setting.getDownloadDir() + info.getFileName() + "." + EXTENSIONG;
-            }
-        }
-    }
-
     private class Worker implements Runnable {
 
         @Override
@@ -209,40 +197,44 @@ public class DownloadQueen {
         }
 
         public boolean runInternal(){
-            WorkInfo workInfo = null;
-            synchronized (mWorkInfoLinkedList) {
-                workInfo = mWorkInfoLinkedList.poll();
-            }
-
-            if(workInfo == null) {
-                return false;
-            }
-
-            synchronized (mExecuteWorkMap) {
-                mExecuteWorkMap.put(workInfo.getWId(), workInfo);
-            }
-
-            //thread interrupte, stop thread
-            if(Thread.currentThread().isInterrupted()) {
-                Log.d(TAG, "downloader task stop");
-                return false;
-            }
-
-            //stop current work
-            if(workInfo.isInterrupted) {
-                return true;
-            }
-
             Log.d(TAG, "start download by thread-" + this.hashCode());
             InputStream inputStream = null;
             RandomAccessFile accessFile = null;
+            WorkInfo workInfo = null;
             try {
-                long finishSize = 0;
-                Log.d(TAG, "connect url: " + workInfo.getFileUrl());
+                synchronized (mWorkInfoLinkedList) {
+                    workInfo = mWorkInfoLinkedList.poll();
+                }
+
+                if(workInfo == null) {
+                    return false;
+                }
+
+                notifyStart(workInfo);
+
+                //synchronized (mExecuteWorkMap) {
+                    mExecuteWorkMap.put(workInfo.getWId(), workInfo);
+                //}
+
+                //thread interrupte, stop thread
+                if(Thread.currentThread().isInterrupted()) {
+                    Log.d(TAG, "downloader task stop");
+                    return false;
+                }
+
+                //stop current work
+                synchronized (mInterruptedList) {
+                    if(mInterruptedList.contains(workInfo.getWId())) {
+                        return true;
+                    }
+                }
+
                 Request.Builder builder = new EhRequestBuilder(workInfo.getFileUrl()).addHeader("Connection", "close");
-                accessFile = new RandomAccessFile(getFileName(workInfo), "rw");
-                if(accessFile != null && accessFile.length() > 0) {
-                    Log.d(TAG,"already download size: " + accessFile.length());
+
+                long finishSize = 0;
+                String filePath = DownloadUtil.getFilePath(workInfo.getFileName());
+                accessFile = new RandomAccessFile(filePath, "rw");
+                if(accessFile.length() > 0) {
                     finishSize = accessFile.length();
                     accessFile.seek(finishSize);
                     builder.addHeader("Range", "bytes=" + finishSize + "-");
@@ -251,18 +243,14 @@ public class DownloadQueen {
                 Call call = mHttpClient.newCall(builder.build());
                 Response response = call.execute();
 
-                String extension = response.body().contentType().subtype();
-                long contentLength = response.body().contentLength();
-                contentLength += finishSize;
-                Log.d(TAG,"response code :" + response.code());
-                Log.d(TAG,"content lenght :" + contentLength);
-                Log.d(TAG,"media type :" + response.body().contentType().type());
-                Log.d(TAG,"extension type :" + extension);
+                if(response.code() == 410) {
+                    builder.removeHeader("Range");
+                }
 
                 if(response.code()/100 != 2) {
                     Log.d(TAG, "cannot get the source by response code: " + response.code());
                     if (response.code() == 410) {
-                        //notifyDownload410(mLoaderId);
+                        notifyDownload410(workInfo);
                     } else {
                         String msg = "connect url error";
                         notifyDownloadFail(workInfo, msg);
@@ -270,7 +258,20 @@ public class DownloadQueen {
                     return true;
                 }
 
-                if(!checkExtension(extension)) {
+                String extension = response.body().contentType().subtype();
+                long contentLength = response.body().contentLength();
+                Log.d(TAG,"already download size: " + finishSize);
+                Log.d(TAG,"content lenght :" + contentLength);
+                if(contentLength == finishSize) {
+                    //file already download complete; but the condition is imprecisely;
+                    notifyDownloadFinish(workInfo);
+                    return true;
+                } else {
+                    contentLength += finishSize;
+                }
+
+                //check extension
+                if(!DownloadUtil.checkExtension(extension)) {
                     response.body().close();
                     String errorMsg = "don't support this video type, error type: " + extension;
                     notifyDownloadFail(workInfo, errorMsg);
@@ -284,36 +285,42 @@ public class DownloadQueen {
                 }
 
                 //stop current work
-                if(workInfo.isInterrupted) {
-                    return true;
+                synchronized (mInterruptedList) {
+                    if(mInterruptedList.contains(workInfo.getWId())) {
+                        return true;
+                    }
                 }
 
                 inputStream = response.body().byteStream();
                 int byteRead = 0;
-                long receiveSize = 0;
                 byte[] data = new byte[1024 * 4];
                 while((byteRead = inputStream.read(data)) != -1) {
                     //Log.d(TAG, "read by one size: " + byteRead);
                     accessFile.write(data, 0, byteRead);
-                    receiveSize += byteRead;
                     finishSize += byteRead;
 
                     notifyDownloading(workInfo, contentLength, finishSize, byteRead);
 
                     if(Thread.currentThread().isInterrupted()) {
-                        Log.d(TAG, "downloader task stop");
+                        Log.d(TAG, "worker stop");
                         return false;
                     }
 
                     //stop current work
-                    if(workInfo.isInterrupted) {
-                        return true;
+                    synchronized (mInterruptedList) {
+                        if(mInterruptedList.contains(workInfo.getWId())) {
+                            return true;
+                        }
                     }
                 }
 
+                //finish work
+                notifyDownloadFinish(workInfo);
+
             } catch (Exception e) {
-                //e.printStackTrace();
-                Log.d(TAG, "download failure, maybe interrupte: " + e.getMessage());
+                e.printStackTrace();
+                Log.d(TAG, workInfo.getFileName() + " download failure, maybe interrupte: " + e.getMessage());
+                notifyDownloadFail(workInfo, "error");
             } finally {
                 if(inputStream != null) {
                     try {
@@ -330,8 +337,15 @@ public class DownloadQueen {
                         e.printStackTrace();
                     }
                 }
-                synchronized (mExecuteWorkMap) {
-                    mExecuteWorkMap.remove(workInfo);
+
+                if(workInfo != null) {
+                    //synchronized (mExecuteWorkMap) {
+                        mExecuteWorkMap.remove(workInfo.getWId());
+                    //}
+
+                    synchronized (mInterruptedList) {
+                        mInterruptedList.remove(workInfo.getWId());
+                    }
                 }
             }
 
@@ -339,16 +353,20 @@ public class DownloadQueen {
         }
     }
 
+    private static class TempInfo {
+
+        private String token;
+        private long contentLength;
+    }
+
     public static final class WorkInfo {
 
         private int wId;
         private String fileName;
         private String fileUrl;
-        private boolean isInterrupted;
 
         private WorkInfo(String fileName, String fileUrl) {
             wId = sIntIdGenerator.nextId();
-            isInterrupted = false;
 
             this.fileName = fileName;
             this.fileUrl = fileUrl;
@@ -362,20 +380,18 @@ public class DownloadQueen {
             return fileName;
         }
 
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
-        }
-
         public String getFileUrl() {
             return fileUrl;
         }
 
-        public void setFileUrl(String fileUrl) {
-            this.fileUrl = fileUrl;
+        public void setFileUrl(String url) {
+            fileUrl = url;
         }
     }
 
     public interface DownloadWorkListener {
+
+        void onStart(WorkInfo workInfo);
 
         void onDownload(WorkInfo workInfo, long contentLength, long finished, int bytesRead);
 

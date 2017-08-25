@@ -280,6 +280,21 @@ public final class TuVideoPlayer extends FrameLayout
 
     }
 
+    public void release() {
+        TuIjkMediaPlayerManager.releaseManager();
+    }
+
+    public void start() {
+        setCurrentStateAndUi(STATE_PREPARING);
+        prepareMediaPlayer();
+    }
+
+    public void pause() {
+        if(mManager != null) {
+            mManager.pause();
+        }
+    }
+
     public void setTitle(CharSequence title) {
         mTextTitle.setText(title);
     }
@@ -544,8 +559,12 @@ public final class TuVideoPlayer extends FrameLayout
             }
 
         } else if(v.getId() == R.id.back_button) {
-            clearFullScreen();
-
+            if(getParentPlayer() != null) {
+                clearFullScreen();
+            } else {
+                AppCompatActivity activity = VideoUtils.getAppCompActivity(mContext);
+                activity.onBackPressed();
+            }
         } else if(v.getId() == R.id.favorite_button) {
             if(mFavoriteListener != null) {
                 mFavoriteListener.onFavorite(mUrl);

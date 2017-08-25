@@ -15,6 +15,7 @@ import com.stream.client.parser.VideoSourceParser;
 import com.stream.hstream.HStreamApplication;
 import com.stream.hstream.R;
 import com.stream.hstream.Setting;
+import com.stream.util.LoadImageHelper;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 
 import java.util.ArrayList;
@@ -26,9 +27,13 @@ import java.util.List;
 
 public class VideoTvHolder extends RecyclerView.ViewHolder{
 
-    private final Context mContext;
     private HsClient mClient;
-    private String mVideoUrl;
+    /**
+     * Unikey in ConacoTask is WeakRefrence, if not save LoadImageHelper's refrence,
+     * when the LoadImageHelper is allocated, the Unikey will invalid;
+     * So, save the refrence until VideoTvHolder allocated or recycled;
+     */
+    private LoadImageHelper mImageHelper;
 
     public TuVideoPlayer mVideoPlayer;
     public AppCompatImageView mDownloadButton;
@@ -36,10 +41,15 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
     public VideoTvHolder(Context context, View itemView) {
         super(itemView);
 
-        mContext = context;
         mClient = HStreamApplication.getHsClient(context);
         mVideoPlayer = (TuVideoPlayer) itemView.findViewById(R.id.list_video_player);
         mDownloadButton = (AppCompatImageView) itemView.findViewById(R.id.download_button);
+    }
+
+    public void setThumb(Context context, String token, String thumb) {
+        mImageHelper = LoadImageHelper.with(context)
+                .load(token, thumb)
+                .into(mVideoPlayer.getThumb());
     }
 
     public void requiredSourceInfo(String sourceUrl) {
@@ -55,7 +65,6 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
     private void onRequiredDetailSuccess(VideoSourceParser.Result result) {
         VideoSourceInfo videoSourceInfo = result.mVideoSourceInfoList.get(0);
         if(videoSourceInfo != null && videoSourceInfo.videoUrl != null) {
-            mVideoUrl = videoSourceInfo.videoUrl;
             mVideoPlayer.setVideoPath(videoSourceInfo.videoUrl);
         } else {
         }

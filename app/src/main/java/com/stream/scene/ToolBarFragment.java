@@ -1,6 +1,9 @@
 package com.stream.scene;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.health.PackageHealthStats;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
@@ -71,6 +74,12 @@ public class ToolBarFragment extends SceneFragment{
         }
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mToolbar = null;
+    }
+
     public int getMenuResId() {
         return 0;
     }
@@ -80,15 +89,29 @@ public class ToolBarFragment extends SceneFragment{
     }
 
     public void onMenuCreated(Menu menu) {
-
     }
 
     public void onNavigationClick(){
+    }
 
+    public void setNavigationIcon(@DrawableRes int resId) {
+        if(mToolbar != null) {
+            mToolbar.setNavigationIcon(resId);
+        }
+    }
+
+    public void setNavigationIcon(@Nullable Drawable icon) {
+        if(mToolbar != null) {
+            mToolbar.setNavigationIcon(icon);
+        }
     }
 
     public void setTitle(CharSequence title) {
-        mTempTitle = title;
+        if(mToolbar != null) {
+            mToolbar.setTitle(title);
+        } else {
+            mTempTitle = title;
+        }
     }
 
 }

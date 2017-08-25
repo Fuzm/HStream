@@ -283,6 +283,7 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
                         mMediaPlayer.setOnBufferingUpdateListener(mBufferingUpdateListener);
 
                         //mMediaPlayer.setDataSource(getContext(), mUri, null);
+                        Log.d(TAG, "play url: " + mUri);
                         mMediaPlayer.setDataSource(mUri);
                         mMediaPlayer.setSurface(new Surface(sSavedSurfaceTexture));
                         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);

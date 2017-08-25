@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,22 +15,29 @@ import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.daimajia.swipe.SwipeLayout;
 import com.hippo.yorozuya.FileUtils;
 import com.stream.dao.DownloadInfo;
 import com.stream.download.DownloadManager;
 import com.stream.download.DownloadService;
+import com.stream.download.DownloadUtil;
 import com.stream.hstream.adapter.SimpleAdapter;
 import com.stream.hstream.adapter.SimpleHolder;
 import com.stream.scene.SceneFragment;
 import com.stream.scene.ToolBarFragment;
+import com.stream.util.DrawableManager;
 import com.stream.widget.LoadImageView;
+import com.stream.widget.view.ViewTransition;
 
 import java.util.List;
 
@@ -42,6 +51,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
     private DownloadListAdapter mAdapter;
     private List<DownloadInfo> mData;
     private DownloadManager mDownloadManager;
+    private ViewTransition mViewTransition;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,7 +59,6 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
 
         mDownloadManager = HStreamApplication.getDownloadManager(getContext());
         mDownloadManager.setDownloadInfoListener(this);
-
         updateData();
     }
 
@@ -59,7 +68,35 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         View view = inflater.inflate(R.layout.fragment_download_main, container, false);
         mRecyclerView = (RecyclerView) view.findViewById(R.id.download_list);
         mAdapter = new DownloadListAdapter(inflater, getContext());
+
+        TextView tip = (TextView) view.findViewById(R.id.tip);
+        Drawable drawable = DrawableManager.getDrawable(getContext(), R.drawable.ic_big_download);
+        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+        tip.setCompoundDrawables(null, drawable, null, null);
+
+        mViewTransition = new ViewTransition(mRecyclerView, tip);
+        updateView();
         return view;
+    }
+
+    private void updateView() {
+        if(mData != null && mData.size() > 0) {
+            mViewTransition.showView(0, true);
+        } else {
+            mViewTransition.showView(1, true);
+        }
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        setTitle(getResources().getString(R.string.menu_download));
+        setNavigationIcon(R.drawable.v_arrow_left_dark_x24);
+    }
+
+    @Override
+    public void onNavigationClick() {
+        onBackPressed();
     }
 
     @Override
@@ -100,6 +137,8 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         if(index != -1) {
             mAdapter.notifyItemChanged(index);
         }
+
+        updateView();
     }
 
     @Override
@@ -123,6 +162,15 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         }
     }
 
+    @Override
+    public void onRemove(DownloadInfo info, int position) {
+        if(position != -1) {
+            mAdapter.notifyItemRemoved(position);
+        }
+
+        updateView();
+    }
+
     private void bindForState(DownloadHolder holder, DownloadInfo info) {
         Resources resources = getResources();
         if (null == resources) {
@@ -144,6 +192,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
                 bindState(holder, info, resources.getString(R.string.download_state_finish));
                 break;
             case DownloadManager.STATE_WAIT:
+                bindState(holder, info, resources.getString(R.string.download_state_wait));
                 break;
         }
     }
@@ -225,7 +274,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         }
     }
 
-    private class DownloadHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    private class DownloadHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
 
         private View mItemView;
         public LoadImageView mDownloadThumb;
@@ -235,6 +284,9 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         public TextView mTotalText;
         public ImageView mStart;
         public ImageView mStop;
+        public Button mPlay;
+        public Button mDelete;
+        public SwipeLayout mSwipeLayout;
 
         public DownloadHolder(View itemView) {
             super(itemView);
@@ -247,10 +299,17 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
             mTotalText = (TextView) itemView.findViewById(R.id.total_text);
             mStart = (ImageView) itemView.findViewById(R.id.start);
             mStop = (ImageView) itemView.findViewById(R.id.stop);
+            mPlay = (Button) itemView.findViewById(R.id.play);
+            mDelete = (Button) itemView.findViewById(R.id.delete);
+            mSwipeLayout = (SwipeLayout) itemView.findViewById(R.id.swipe_layout);
 
             mStart.setOnClickListener(this);
             mStop.setOnClickListener(this);
+            mPlay.setOnClickListener(this);
+            mDelete.setOnClickListener(this);
             mProgressBar.setMax(100);
+
+            //itemView.setOnTouchListener(this);
         }
 
         @Override
@@ -272,6 +331,27 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
             } else if(v.getId() == R.id.stop) {
                 if(mDownloadManager != null) {
                     mDownloadManager.stopDownload(mData.get(index));
+                }
+            } else if(v.getId() == R.id.play) {
+                DownloadInfo info = mData.get(index);
+                if(mDownloadManager != null) {
+                    String filePath = DownloadUtil.getFilePath(info.getTitle());
+                    if(filePath != null && filePath.length() > 0) {
+                        Intent intent = new Intent(getContext(), VideoPalyActivity.class);
+                        intent.putExtra(VideoPalyActivity.KEY_TITLE, info.getTitle());
+                        intent.putExtra(VideoPalyActivity.KEY_URL, filePath);
+                        getActivity().startActivity(intent);
+                    } else {
+                        showTip("无法获取路径", Toast.LENGTH_SHORT);
+                    }
+                } else {
+                    showTip("无法获取下载管理器", Toast.LENGTH_SHORT);
+                }
+            } else if(v.getId() == R.id.delete) {
+                //mSwipeLayout.close();
+                DownloadInfo info = mData.get(index);
+                if(mDownloadManager != null) {
+                    mDownloadManager.deleteDownload(info);
                 }
             }
         }

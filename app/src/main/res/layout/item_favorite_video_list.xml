@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.daimajia.swipe.SwipeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:background="@drawable/card_grey_no_padding_2dp">
 
-    <com.stream.videoplayerlibrary.tv.TuVideoPlayer
-                  android:id="@+id/list_favorite_video"
-                  android:layout_width="match_parent"
-                  android:layout_height="250dp" />
+    <Button
+        android:id="@+id/delete"
+        android:text="@string/common_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="250dp"
+        android:textColor="@color/primary_drawable_dark"
+        android:textSize="16sp"
+        android:textAlignment="center"
+        android:background="@color/orange_3000"/>
 
-</LinearLayout>
+    <com.stream.videoplayerlibrary.tv.TuVideoPlayer
+        android:id="@+id/list_favorite_video"
+        android:layout_width="wrap_content"
+        android:layout_height="250dp" />
+
+
+</com.daimajia.swipe.SwipeLayout>

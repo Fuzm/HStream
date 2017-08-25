@@ -18,6 +18,9 @@
     <string name="menu_download">下载</string>
 
     <!-- Download -->
+    <string name="ticket_download_info_add">加入下载</string>
+    <string name="ticket_download_info_complete">完成下载</string>
+    <string name="no_download_info">这里是下载目录</string>
     <string name="stat_download_action_stop_all">停止全部</string>
     <string name="stat_download_done_title">下载完成</string>
     <string name="stat_download_loading_title">正在下载</string>
@@ -31,5 +34,12 @@
 
     <string name="download_start_all">全部开始</string>
     <string name="download_stop_all">全部停止</string>
+
+    <!-- common -->
+    <string name="common_delete">删除</string>
+    <string name="common_play">播放</string>
+
+    <!-- Favorite -->
+    <string name="no_favorite_info">这里是收藏目录</string>
 
 </resources>

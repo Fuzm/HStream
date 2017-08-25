@@ -1,5 +1,6 @@
 package com.stream.download;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.hippo.yorozuya.IntIdGenerator;

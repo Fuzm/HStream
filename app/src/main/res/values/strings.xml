@@ -47,6 +47,9 @@
     <string name="menu_download">Download</string>
 
     <!-- download -->
+    <string name="ticket_download_info_add">Add Download</string>
+    <string name="ticket_download_info_complete">Complete Download</string>
+    <string name="no_download_info">Download items will be shown here</string>
     <string name="stat_download_action_stop_all">Stop All</string>
     <string name="stat_download_done_title">Download Finished</string>
     <string name="stat_download_loading_title">Downloading</string>
@@ -60,5 +63,12 @@
 
     <string name="download_start_all">Start All</string>
     <string name="download_stop_all">Stop All</string>
+
+    <!-- common -->
+    <string name="common_delete">Delete</string>
+    <string name="common_play">Play</string>
+
+    <!-- Favorite -->
+    <string name="no_favorite_info">Favorite items will be added here</string>
 
 </resources>

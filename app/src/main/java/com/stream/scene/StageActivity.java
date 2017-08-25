@@ -8,6 +8,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Window;
 
 import com.stream.hstream.R;
 
@@ -25,6 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class StageActivity extends AppCompatActivity {
 
     public static final String TAG = StageActivity.class.getSimpleName();
+
+    public static final String ACTION_START_SCENE = "start_scene";
+    public static final String KEY_SCENE_NAME = "stage_activity_scene_name";
+    public static final String KEY_SCENE_ARGS = "stage_activity_scene_args";
 
     private final ArrayList<String> mSceneTagList = new ArrayList<>();
     private final AtomicInteger mIdGenerator = new AtomicInteger();
@@ -66,6 +71,8 @@ public abstract class StageActivity extends AppCompatActivity {
                         startScene(announcer);
                         return;
                     }
+                } else if(ACTION_START_SCENE.equals(action)) {
+                    startSceneFromIntent(intent);
                 }
             }
         }
@@ -88,6 +95,28 @@ public abstract class StageActivity extends AppCompatActivity {
         } catch (ClassCastException e) {
             throw new IllegalStateException(clazz.getName() + " can not cast to scene", e);
         }
+    }
+
+    protected boolean startSceneFromIntent(Intent intent) {
+        String sceneName = intent.getStringExtra(KEY_SCENE_NAME);
+        if (null == sceneName) {
+            return false;
+        }
+
+        Class clazz;
+        try {
+            clazz = Class.forName(sceneName);
+        } catch (ClassNotFoundException e) {
+            Log.e(TAG, "Can't find class " + sceneName, e);
+            return false;
+        }
+
+        Bundle args = intent.getBundleExtra(KEY_SCENE_ARGS);
+
+        Announcer announcer = new Announcer(clazz);
+        announcer.setArgs(args);
+        startScene(announcer);
+        return true;
     }
 
     protected void startScene(Announcer announcer) {

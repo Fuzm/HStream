@@ -15,10 +15,15 @@ import android.support.v4.app.NotificationCompat;
 
 import com.hippo.yorozuya.FileUtils;
 import com.hippo.yorozuya.SimpleHandler;
+import com.hippo.yorozuya.collect.SparseJBArray;
+import com.hippo.yorozuya.collect.SparseJLArray;
 import com.stream.client.data.VideoInfo;
 import com.stream.dao.DownloadInfo;
 import com.stream.hstream.HStreamApplication;
+import com.stream.hstream.MainActivity;
 import com.stream.hstream.R;
+import com.stream.hstream.VideoDownloadFragment;
+import com.stream.scene.StageActivity;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -45,6 +50,8 @@ public class DownloadService extends Service implements DownloadManager.Download
     public static final String ACTION_STOP_ALL = "stop_all";
     public static final String ACTION_DELETE = "delete";
     public static final String ACTION_DELETE_RANGE = "delete_range";
+
+    public static final String ACTION_CLEAR = "clear";
 
     private static final int ID_DOWNLOADING = 1;
     private static final int ID_DOWNLOADED = 2;
@@ -82,6 +89,10 @@ public class DownloadService extends Service implements DownloadManager.Download
             mDownloadManager.startRangeDownload(tokenList);
         } else if (ACTION_START_ALL == intent.getAction()) {
             mDownloadManager.startDownloadAll();
+        } else if(ACTION_STOP_ALL == intent.getAction()) {
+            mDownloadManager.stopAllDownload();
+        } else if (ACTION_CLEAR.equals(intent.getAction())) {
+            //clear();
         }
     }
 
@@ -118,7 +129,7 @@ public class DownloadService extends Service implements DownloadManager.Download
         }
 
         Intent stopAllIntent = new Intent(this, DownloadService.class);
-        //stopAllIntent.setAction(ACTION_STOP_ALL);
+        stopAllIntent.setAction(ACTION_STOP_ALL);
         PendingIntent piStopAll = PendingIntent.getService(this, 0, stopAllIntent, 0);
 
         mDownloadingBuilder = new NotificationCompat.Builder(getApplicationContext())
@@ -138,27 +149,27 @@ public class DownloadService extends Service implements DownloadManager.Download
             return;
         }
 
-//        Intent clearIntent = new Intent(this, DownloadService.class);
-//        clearIntent.setAction(ACTION_CLEAR);
-//        PendingIntent piClear = PendingIntent.getService(this, 0, clearIntent, 0);
-//
-//        Bundle bundle = new Bundle();
-//        bundle.putString(DownloadsScene.KEY_ACTION, DownloadsScene.ACTION_CLEAR_DOWNLOAD_SERVICE);
-//        Intent activityIntent = new Intent(this, MainActivity.class);
-//        activityIntent.setAction(StageActivity.ACTION_START_SCENE);
-//        activityIntent.putExtra(StageActivity.KEY_SCENE_NAME, DownloadsScene.class.getName());
-//        activityIntent.putExtra(StageActivity.KEY_SCENE_ARGS, bundle);
-//        PendingIntent piActivity = PendingIntent.getActivity(DownloadService.this, 0,
-//                activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent clearIntent = new Intent(this, DownloadService.class);
+        clearIntent.setAction(ACTION_CLEAR);
+        PendingIntent piClear = PendingIntent.getService(this, 0, clearIntent, 0);
+
+        Bundle bundle = new Bundle();
+        //bundle.putString(DownloadsScene.KEY_ACTION, DownloadsScene.ACTION_CLEAR_DOWNLOAD_SERVICE);
+        Intent activityIntent = new Intent(this, MainActivity.class);
+        activityIntent.setAction(StageActivity.ACTION_START_SCENE);
+        activityIntent.putExtra(StageActivity.KEY_SCENE_NAME, VideoDownloadFragment.class.getName());
+        activityIntent.putExtra(StageActivity.KEY_SCENE_ARGS, bundle);
+        PendingIntent piActivity = PendingIntent.getActivity(DownloadService.this, 0,
+                activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         mDownloadedBuilder = new NotificationCompat.Builder(getApplicationContext())
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
                 .setContentTitle(getString(R.string.stat_download_done_title))
-                //.setDeleteIntent(piClear)
+                .setDeleteIntent(piClear)
                 .setOngoing(false)
-                .setAutoCancel(true);
-                //.setContentIntent(piActivity);
+                .setAutoCancel(true)
+                .setContentIntent(piActivity);
 
         mDownloadedDelay = new NotificationDelay(this, mNotifyManager, mDownloadedBuilder, ID_DOWNLOADED);
     }
@@ -179,36 +190,37 @@ public class DownloadService extends Service implements DownloadManager.Download
         mDownloadingBuilder
                 .setContentTitle(getString(R.string.stat_download_loading_title))
                 .setContentText(text)
-                .setContentInfo(total == -1 || finished == -1
-                        ? null : FileUtils.humanReadableByteCount(finished, true)
-                                    + "/" +  FileUtils.humanReadableByteCount(total, true))
+//                .setContentInfo(total == -1 || finished == -1
+//                        ? null : FileUtils.humanReadableByteCount(finished, true)
+//                                    + "/" +  FileUtils.humanReadableByteCount(total, true))
                 .setProgress(100, progress, false);
 
         mDownloadingDelay.startForeground();
     }
 
     @Override
-    public void onStart() {
+    public void onStart(DownloadInfo info) {
         if (mNotifyManager == null) {
             return;
         }
 
         ensureDownloadingBuilder();
 
-//        Bundle bundle = new Bundle();
-//        bundle.putLong(DownloadsScene.KEY_GID, info.gid);
-//        Intent activityIntent = new Intent(this, MainActivity.class);
-//        activityIntent.setAction(StageActivity.ACTION_START_SCENE);
-//        activityIntent.putExtra(StageActivity.KEY_SCENE_NAME, DownloadsScene.class.getName());
-//        activityIntent.putExtra(StageActivity.KEY_SCENE_ARGS, bundle);
-//        PendingIntent piActivity = PendingIntent.getActivity(DownloadService.this, 0,
-//                activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Bundle bundle = new Bundle();
+        Intent activityIntent = new Intent(this, MainActivity.class);
+        activityIntent.setAction(StageActivity.ACTION_START_SCENE);
+        activityIntent.putExtra(StageActivity.KEY_SCENE_NAME, VideoDownloadFragment.class.getName());
+        activityIntent.putExtra(StageActivity.KEY_SCENE_ARGS, bundle);
+        PendingIntent piActivity = PendingIntent.getActivity(DownloadService.this, 0,
+                activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        mDownloadingBuilder.setContentTitle(getString(R.string.stat_download_loading_title))
+        mDownloadingBuilder
+                .setTicker(info.getTitle() + getString(R.string.ticket_download_info_add))
+                .setContentTitle(getString(R.string.stat_download_loading_title))
                 .setContentText(null)
                 .setContentInfo(null)
-                .setProgress(0, 0, true);
-                //.setContentIntent(piActivity);
+                .setProgress(0, 0, true)
+                .setContentIntent(piActivity);
 
         mDownloadingDelay.startForeground();
     }
@@ -219,13 +231,23 @@ public class DownloadService extends Service implements DownloadManager.Download
     }
 
     @Override
-    public void onFinish() {
+    public void onFinish(DownloadInfo info) {
         ensureDownloadedBuilder();
+
+        mDownloadedBuilder
+                .setTicker(info.getTitle() + getString(R.string.ticket_download_info_complete))
+                .setContentText(info.getTitle())
+                .setWhen(System.currentTimeMillis());
+        mDownloadedDelay.show();
+
+        checkStopSelf();
     }
 
-    @Override
-    public void onCancel() {
-
+    private void checkStopSelf() {
+        if (mDownloadManager == null || mDownloadManager.isIdle()) {
+            stopForeground(true);
+            stopSelf();
+        }
     }
 
     private static class NotificationDelay implements Runnable {

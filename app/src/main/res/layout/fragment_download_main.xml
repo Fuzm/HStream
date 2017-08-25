@@ -10,4 +10,14 @@
         android:layout_height="match_parent">
     </android.support.v7.widget.RecyclerView>
 
+    <TextView
+        android:id="@+id/tip"
+        android:layout_width="228dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:drawablePadding="16dp"
+        android:text="@string/no_download_info"
+        style="@style/TextAppearance.AppCompat.Medium"/>
+
 </FrameLayout>

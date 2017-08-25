@@ -2,19 +2,19 @@ package com.stream.hstream;
 
 import android.support.annotation.IdRes;
 import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.stream.scene.Announcer;
 import com.stream.scene.SceneFragment;
 import com.stream.scene.StageActivity;
+import com.stream.widget.EhDrawerLayout;
 
 public class MainActivity extends StageActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private DrawerLayout mDrawerLayout;
+    private EhDrawerLayout mDrawerLayout;
     private NavigationView mNavigationView;
 
     static {
@@ -29,7 +29,8 @@ public class MainActivity extends StageActivity
     protected void onCreate2() {
         setContentView(R.layout.activity_main);
 
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout = (EhDrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout.setStatusBarColor(getResources().getColor(R.color.colorPrimary));
 
 //        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 //        setSupportActionBar(toolbar);
@@ -65,9 +66,8 @@ public class MainActivity extends StageActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+        if (mDrawerLayout.isDrawerOpen(Gravity.LEFT)) {
+            mDrawerLayout.closeDrawer(Gravity.LEFT);
         } else {
             super.onBackPressed();
         }
@@ -118,14 +118,9 @@ public class MainActivity extends StageActivity
             // Handle the camera action
         } else if (id == R.id.nav_download) {
             startScene(new Announcer(VideoDownloadFragment.class));
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        mDrawerLayout.closeDrawer(Gravity.LEFT);
         return true;
     }
 
@@ -136,4 +131,5 @@ public class MainActivity extends StageActivity
     public void toggleDrawer(int edgeGravity) {
         mDrawerLayout.openDrawer(edgeGravity);
     }
+
 }
