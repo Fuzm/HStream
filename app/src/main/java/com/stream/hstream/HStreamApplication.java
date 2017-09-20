@@ -52,7 +52,7 @@ public class HStreamApplication extends Application {
         HStreamApplication application = (HStreamApplication) context.getApplicationContext();
         if(application.mOkHttpClient == null) {
             application.mOkHttpClient = new OkHttpClient.Builder()
-                    //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.1.101", 9666)))
+                    //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.1.103", 9666)))
                     .connectTimeout(10, TimeUnit.SECONDS)
                     .readTimeout(10, TimeUnit.SECONDS)
                     .writeTimeout(10, TimeUnit.SECONDS)

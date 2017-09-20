@@ -59,6 +59,10 @@ public class LoadImageHelper {
         return this;
     }
 
+    public void cancel() {
+        mConaco.cancel(mUnikery);
+    }
+
     private class HelperUnikery implements Unikery<ImageBitmap> {
 
         private int mTaskId = Unikery.INVALID_ID;

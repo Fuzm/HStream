@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
@@ -132,12 +133,14 @@ public final class TuVideoPlayer extends FrameLayout
         public void onStartTrackingTouch(SeekBar seekBar) {
             show(3600000);
             removeCallbacks(mShowProgress);
+            removeCallbacks(mBufferWait);
         }
 
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
             setProgress();
             post(mShowProgress);
+            post(mBufferWait);
         }
     };
 

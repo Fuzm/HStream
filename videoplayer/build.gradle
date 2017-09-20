@@ -19,6 +19,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
 }
 
 dependencies {
@@ -30,7 +31,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.github.seven332:yorozuya:0.1.2'
 
-    compile 'tv.danmaku.ijk.media:ijkplayer-java:0.7.9'
-    compile 'tv.danmaku.ijk.media:ijkplayer-armv7a:0.7.9'
-    compile 'tv.danmaku.ijk.media:ijkplayer-x86:0.7.9'
+    compile 'tv.danmaku.ijk.media:ijkplayer-java:0.8.2'
 }

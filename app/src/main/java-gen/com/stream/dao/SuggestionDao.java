@@ -14,7 +14,7 @@ import com.stream.dao.Suggestion;
 /** 
  * DAO for table "hs_suggestions".
 */
-public class SuggestionDao extends AbstractDao<Suggestion, Integer> {
+public class SuggestionDao extends AbstractDao<Suggestion, Long> {
 
     public static final String TABLENAME = "hs_suggestions";
 
@@ -23,7 +23,7 @@ public class SuggestionDao extends AbstractDao<Suggestion, Integer> {
      * Can be used for QueryBuilder and for referencing column names.
     */
     public static class Properties {
-        public final static Property Id = new Property(0, int.class, "id", true, "ID");
+        public final static Property Id = new Property(0, Long.class, "id", true, "_id");
         public final static Property Query = new Property(1, String.class, "query", false, "QUERY");
         public final static Property Date = new Property(2, Long.class, "date", false, "DATE");
     };
@@ -41,7 +41,7 @@ public class SuggestionDao extends AbstractDao<Suggestion, Integer> {
     public static void createTable(SQLiteDatabase db, boolean ifNotExists) {
         String constraint = ifNotExists? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"hs_suggestions\" (" + //
-                "\"ID\" INTEGER PRIMARY KEY NOT NULL ," + // 0: id
+                "\"_id\" INTEGER PRIMARY KEY AUTOINCREMENT ," + // 0: id
                 "\"QUERY\" TEXT," + // 1: query
                 "\"DATE\" INTEGER);"); // 2: date
     }
@@ -56,7 +56,11 @@ public class SuggestionDao extends AbstractDao<Suggestion, Integer> {
     @Override
     protected void bindValues(SQLiteStatement stmt, Suggestion entity) {
         stmt.clearBindings();
-        stmt.bindLong(1, entity.getId());
+ 
+        Long id = entity.getId();
+        if (id != null) {
+            stmt.bindLong(1, id);
+        }
  
         String query = entity.getQuery();
         if (query != null) {
@@ -71,15 +75,15 @@ public class SuggestionDao extends AbstractDao<Suggestion, Integer> {
 
     /** @inheritdoc */
     @Override
-    public Integer readKey(Cursor cursor, int offset) {
-        return cursor.getInt(offset + 0);
+    public Long readKey(Cursor cursor, int offset) {
+        return cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0);
     }    
 
     /** @inheritdoc */
     @Override
     public Suggestion readEntity(Cursor cursor, int offset) {
         Suggestion entity = new Suggestion( //
-            cursor.getInt(offset + 0), // id
+            cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // id
             cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1), // query
             cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2) // date
         );
@@ -89,20 +93,21 @@ public class SuggestionDao extends AbstractDao<Suggestion, Integer> {
     /** @inheritdoc */
     @Override
     public void readEntity(Cursor cursor, Suggestion entity, int offset) {
-        entity.setId(cursor.getInt(offset + 0));
+        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
         entity.setQuery(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
         entity.setDate(cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2));
      }
     
     /** @inheritdoc */
     @Override
-    protected Integer updateKeyAfterInsert(Suggestion entity, long rowId) {
-        return entity.getId();
+    protected Long updateKeyAfterInsert(Suggestion entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
     }
     
     /** @inheritdoc */
     @Override
-    public Integer getKey(Suggestion entity) {
+    public Long getKey(Suggestion entity) {
         if(entity != null) {
             return entity.getId();
         } else {

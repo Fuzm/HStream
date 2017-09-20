@@ -1,8 +1,8 @@
 <component name="libraryTable">
   <library name="image-0.1.12">
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.github.seven332/image/0.1.12/res" />
-      <root url="jar://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.github.seven332/image/0.1.12/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.android/build-cache/1fc5c76cf3ddf9146d5a7d6ae2dea52be4fd7478/output/res" />
+      <root url="jar://$USER_HOME$/.android/build-cache/1fc5c76cf3ddf9146d5a7d6ae2dea52be4fd7478/output/jars/classes.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>

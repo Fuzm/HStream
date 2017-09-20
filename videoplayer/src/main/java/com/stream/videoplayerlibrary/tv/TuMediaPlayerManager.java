@@ -142,8 +142,8 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
         mMediaPlayer.pause();
     }
 
-    public void seekTo(int posi) {
-        mMediaPlayer.seekTo(posi);
+    public void seekTo(long posi) {
+        mMediaPlayer.seekTo((int) posi);
     }
 
     public int getCurrentPosition() {

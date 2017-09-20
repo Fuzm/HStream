@@ -6,28 +6,28 @@ package com.stream.dao;
  */
 public class Suggestion {
 
-    private int id;
+    private Long id;
     private String query;
     private Long date;
 
     public Suggestion() {
     }
 
-    public Suggestion(int id) {
+    public Suggestion(Long id) {
         this.id = id;
     }
 
-    public Suggestion(int id, String query, Long date) {
+    public Suggestion(Long id, String query, Long date) {
         this.id = id;
         this.query = query;
         this.date = date;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

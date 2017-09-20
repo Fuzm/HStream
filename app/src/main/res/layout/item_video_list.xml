@@ -4,19 +4,37 @@
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:background="@drawable/card_grey_no_padding_2dp">
-
-    <com.stream.videoplayerlibrary.tv.TuVideoPlayer
-        android:id="@+id/list_video_player"
-        android:layout_width="match_parent"
-        android:layout_height="230dp" />
+              >
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="5dp"
-        android:layout_marginLeft="5dp"
+        android:layout_height="wrap_content">
+
+        <com.stream.videoplayerlibrary.tv.TuVideoPlayer
+            android:id="@+id/list_video_player"
+            android:layout_width="match_parent"
+            android:layout_height="230dp" />
+
+        <android.support.v7.widget.AppCompatTextView
+            android:id="@+id/message_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/primary_drawable_dark"
+            android:layout_margin="5dp"
+            android:layout_gravity="bottom"/>
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
         android:padding="5dp">
+
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/require_button"
+            android:text="require"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
         <android.support.v7.widget.AppCompatImageView
             android:id="@+id/download_button"

@@ -1,5 +1,7 @@
 package com.stream.client.parser;
 
+import android.util.Log;
+
 import com.stream.client.data.VideoSourceInfo;
 
 import org.jsoup.Jsoup;
@@ -25,13 +27,17 @@ public class VideoSourceParser {
     public static Result parse(String body) {
         Result result = new Result();
         Document doc = Jsoup.parse(body);
+        Log.d("VideoSourceParser", doc.getElementsByClass("videotitle").html());
 
         try {
             List<VideoSourceInfo> list = new ArrayList<>();
             Element root = doc.getElementById("tabs-1");
             Elements sources = root.child(0).children();
             for(Element e: sources) {
-                list.add(parseDetail(e, root));
+                VideoSourceInfo info = parseDetail(e, root);
+                if(info != null) {
+                    list.add(parseDetail(e, root));
+                }
             }
 
             result.mVideoSourceInfoList = list;
@@ -50,12 +56,20 @@ public class VideoSourceParser {
             id = id.replace("#", "");
         }
 
-        Element iframe = root.getElementById(id).child(0).child(0);
-        String url = iframe.attr("src");
+        Log.d("VideoSourceParser", name + "-----------" + id);
+        VideoSourceInfo info = null;
+        try {
+            Element iframe = root.getElementById(id).child(0).child(0);
+            String url = iframe.attr("src");
 
-        VideoSourceInfo info = new VideoSourceInfo();
-        info.name = name;
-        info.url = url;
+            info = new VideoSourceInfo();
+            info.name = name;
+            info.url = url;
+            return info;
+        } catch (Exception e) {
+            Log.d("VideoSourceParser", "This Source is not available");
+        }
+
         return info;
     }
 

@@ -1,12 +1,15 @@
 package com.stream.client;
 
-import com.stream.client.data.VideoInfo;
+import android.util.Log;
+
 import com.stream.client.data.VideoSourceInfo;
-import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoListParser;
+import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoUrlParser;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import okhttp3.Call;
 import okhttp3.Headers;
@@ -85,10 +88,21 @@ public class HsEngine {
             throw e;
         }
 
+        List<VideoSourceInfo> list = new ArrayList<VideoSourceInfo>();
         for(VideoSourceInfo info: result.mVideoSourceInfoList) {
-            VideoUrlParser.Result urlResult = getVideoUrl(task, okHttpClient, info.url);
-            info.videoUrl = urlResult.url;
+            if(info.url != null && !info.url.equals("")) {
+                VideoUrlParser.Result urlResult = getVideoUrl(task, okHttpClient, info.url);
+                if(urlResult.url != null) {
+                    info.videoUrl = urlResult.url;
+                    list.add(info);
+                }
+
+                Log.d(TAG, info.name + "--------------" + urlResult.url);
+            }
+
         }
+
+        result.mVideoSourceInfoList = list;
 
         return result;
     }

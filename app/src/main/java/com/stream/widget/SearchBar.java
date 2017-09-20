@@ -77,7 +77,7 @@ public class SearchBar extends FrameLayout implements View.OnClickListener,
     }
 
     public void init(Context context) {
-        setBackgroundResource(R.drawable.card_white_no_padding_2dp);
+        //setBackgroundResource(R.drawable.card_white_no_padding_2dp);
 
         View view = LayoutInflater.from(context).inflate(R.layout.widget_search_bar, this);
         mSearchMenu = (ImageView) view.findViewById(R.id.search_menu);

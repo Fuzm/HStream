@@ -62,7 +62,7 @@ public class StreamDaoGenerator {
         entity.setTableName("hs_suggestions");
         entity.setClassNameDao("SuggestionDao");
 
-        entity.addIntProperty("id").primaryKey().notNull();;
+        entity.addIdProperty().autoincrement();
         entity.addStringProperty("query");
         entity.addLongProperty("date");
     }

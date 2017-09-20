@@ -47,17 +47,30 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
     }
 
        @Override
-    public void onBindViewHolder(VideoTvHolder holder, final int position) {
-        VideoInfo videoInfo = getDataAt(position);
+    public void onBindViewHolder(final VideoTvHolder holder, final int position) {
+        final VideoInfo videoInfo = getDataAt(position);
+
+        //clear holder old info, because it will recycle
+        holder.clear();
 
         holder.mVideoPlayer.setUp(null, videoInfo.title, TuVideoPlayer.MODE_NORMAL_SCREEN);
         holder.mVideoPlayer.setOnFavoriteListener(new FavoriteVideoListener(videoInfo));
         holder.setThumb(mContext, videoInfo.token, videoInfo.thumb);
-        holder.requiredSourceInfo(videoInfo.url);
+        holder.setSourceUrl(videoInfo.url);
+        holder.requiredSourceInfo(videoInfo.title, videoInfo.url);
+
         holder.mDownloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onItemClick(v, position);
+            }
+        });
+
+        holder.mRequireButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                holder.requiredSourceInfo(videoInfo.title, videoInfo.url);
             }
         });
     }
