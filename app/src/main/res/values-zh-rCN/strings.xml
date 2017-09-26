@@ -3,6 +3,8 @@
 
     <!-- Gallery List -->
     <string name="gl_get_source_fail">无法找到视频地址</string>
+    <string name="source_no_found">没有有效的视频源</string>
+    <string name="source_loading">视频源加载中</string>
 
     <string name="VideoView_error_title" msgid="3534509135438353077">"视频问题"</string>
     <string name="VideoView_error_text_invalid_progressive_playback" msgid="3186670335938670444">"抱歉，该视频不适合在此设备上播放。"</string>
@@ -41,5 +43,34 @@
 
     <!-- Favorite -->
     <string name="no_favorite_info">这里是收藏目录</string>
+
+    <string name="error_bad_status_code">错误的状态码：%d</string>
+    <string name="error_timeout">超时</string>
+    <string name="error_unknown_host">未知主机</string>
+    <string name="error_redirection">太多重定向</string>
+    <string name="error_socket">网络错误</string>
+    <string name="error_unknown">奇怪的错误</string>
+    <string name="error_cant_find_activity">找不到相应的应用</string>
+    <string name="error_cannot_parse_the_url">无法解析链接</string>
+    <string name="error_not_folder_path">非文件夹路径</string>
+    <string name="error_no_provider">无 provider</string>
+    <string name="error_decoding_failed">解码失败</string>
+    <string name="error_not_found">未找到</string>
+    <string name="error_empty">空</string>
+    <string name="error_invalid_zip_file">无效 zip 文件</string>
+    <string name="error_reading_failed">读取失败</string>
+    <string name="error_out_of_range">越界</string>
+    <string name="error_write_failed">写入失败</string>
+    <string name="error_parse_error">解析失败</string>
+    <string name="error_509">509</string>
+    <string name="error_invalid_url">无效链接</string>
+    <string name="error_get_ptoken_error">获取 pToken 错误</string>
+    <string name="error_invalid_specify_gallery">指定画廊的关键字应该看起来像 “618395 0439fa3666”</string>
+    <string name="error_cant_create_temp_file">无法创建临时文件</string>
+    <string name="error_cant_save_image">无法保存图片</string>
+    <string name="error_invalid_number">非法数字</string>
+
+    <string name="msg_last_page">到底了-_-</string>
+
 
 </resources>

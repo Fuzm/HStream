@@ -8,6 +8,7 @@ import android.util.Log;
 import de.greenrobot.dao.AbstractDaoMaster;
 import de.greenrobot.dao.identityscope.IdentityScopeType;
 
+import com.stream.dao.SourceDao;
 import com.stream.dao.DownloadDao;
 import com.stream.dao.FavoriteDao;
 import com.stream.dao.SuggestionDao;
@@ -21,6 +22,7 @@ public class DaoMaster extends AbstractDaoMaster {
 
     /** Creates underlying database table using DAOs. */
     public static void createAllTables(SQLiteDatabase db, boolean ifNotExists) {
+        SourceDao.createTable(db, ifNotExists);
         DownloadDao.createTable(db, ifNotExists);
         FavoriteDao.createTable(db, ifNotExists);
         SuggestionDao.createTable(db, ifNotExists);
@@ -28,6 +30,7 @@ public class DaoMaster extends AbstractDaoMaster {
     
     /** Drops underlying database table using DAOs. */
     public static void dropAllTables(SQLiteDatabase db, boolean ifExists) {
+        SourceDao.dropTable(db, ifExists);
         DownloadDao.dropTable(db, ifExists);
         FavoriteDao.dropTable(db, ifExists);
         SuggestionDao.dropTable(db, ifExists);
@@ -62,6 +65,7 @@ public class DaoMaster extends AbstractDaoMaster {
 
     public DaoMaster(SQLiteDatabase db) {
         super(db, SCHEMA_VERSION);
+        registerDaoClass(SourceDao.class);
         registerDaoClass(DownloadDao.class);
         registerDaoClass(FavoriteDao.class);
         registerDaoClass(SuggestionDao.class);

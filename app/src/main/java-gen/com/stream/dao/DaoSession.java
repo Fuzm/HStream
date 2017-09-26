@@ -9,10 +9,12 @@ import de.greenrobot.dao.AbstractDaoSession;
 import de.greenrobot.dao.identityscope.IdentityScopeType;
 import de.greenrobot.dao.internal.DaoConfig;
 
+import com.stream.dao.SourceInfo;
 import com.stream.dao.DownloadInfo;
 import com.stream.dao.Favorite;
 import com.stream.dao.Suggestion;
 
+import com.stream.dao.SourceDao;
 import com.stream.dao.DownloadDao;
 import com.stream.dao.FavoriteDao;
 import com.stream.dao.SuggestionDao;
@@ -26,10 +28,12 @@ import com.stream.dao.SuggestionDao;
  */
 public class DaoSession extends AbstractDaoSession {
 
+    private final DaoConfig sourceDaoConfig;
     private final DaoConfig downloadDaoConfig;
     private final DaoConfig favoriteDaoConfig;
     private final DaoConfig suggestionDaoConfig;
 
+    private final SourceDao sourceDao;
     private final DownloadDao downloadDao;
     private final FavoriteDao favoriteDao;
     private final SuggestionDao suggestionDao;
@@ -37,6 +41,9 @@ public class DaoSession extends AbstractDaoSession {
     public DaoSession(SQLiteDatabase db, IdentityScopeType type, Map<Class<? extends AbstractDao<?, ?>>, DaoConfig>
             daoConfigMap) {
         super(db);
+
+        sourceDaoConfig = daoConfigMap.get(SourceDao.class).clone();
+        sourceDaoConfig.initIdentityScope(type);
 
         downloadDaoConfig = daoConfigMap.get(DownloadDao.class).clone();
         downloadDaoConfig.initIdentityScope(type);
@@ -47,19 +54,26 @@ public class DaoSession extends AbstractDaoSession {
         suggestionDaoConfig = daoConfigMap.get(SuggestionDao.class).clone();
         suggestionDaoConfig.initIdentityScope(type);
 
+        sourceDao = new SourceDao(sourceDaoConfig, this);
         downloadDao = new DownloadDao(downloadDaoConfig, this);
         favoriteDao = new FavoriteDao(favoriteDaoConfig, this);
         suggestionDao = new SuggestionDao(suggestionDaoConfig, this);
 
+        registerDao(SourceInfo.class, sourceDao);
         registerDao(DownloadInfo.class, downloadDao);
         registerDao(Favorite.class, favoriteDao);
         registerDao(Suggestion.class, suggestionDao);
     }
     
     public void clear() {
+        sourceDaoConfig.getIdentityScope().clear();
         downloadDaoConfig.getIdentityScope().clear();
         favoriteDaoConfig.getIdentityScope().clear();
         suggestionDaoConfig.getIdentityScope().clear();
+    }
+
+    public SourceDao getSourceDao() {
+        return sourceDao;
     }
 
     public DownloadDao getDownloadDao() {

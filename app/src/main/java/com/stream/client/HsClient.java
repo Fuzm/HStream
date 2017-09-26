@@ -82,7 +82,8 @@ public class HsClient {
                     case METHOD_GET_VIDEO_DETAIL:
                         return HsEngine.getVideoDetail(this, mOkHttpClient, (String) params[0]);
                     case METHOD_GET_VIDEO_URL:
-                        return null;//HsEngine.getVideoUrl(this, mOkHttpClient, (String) params[0]);
+                        //return null;
+                        return HsEngine.getVideoUrl(this, mOkHttpClient, (String) params[0]);
                     case METHOD_GET_VIDEO_ALL:
                     default:
                         return new IllegalStateException("Can't detect method " + mMethod);

@@ -31,9 +31,13 @@ public class Setting {
     }
 
     public static final String KEY_TYPE_REQUEST = "request_type";
+    public static final String KEY_TYPE_WEB = "web_type";
 
     public static final String TYPE_MOBILE_REQUEST = "mobile";
     public static final String TYPE_NORMAL_REQUEST = "normal";
+
+    public static final String WEB_STREAM = "STREAM";
+    public static final String WEB_MUCHO = "MUCHO";
 
     public static final int MAX_LIST_VIEO_PLAY_NUM = 1;
 
@@ -44,6 +48,8 @@ public class Setting {
 
         if(key.equals(KEY_TYPE_REQUEST)) {
             return TYPE_NORMAL_REQUEST;
+        } else if(key.equals(KEY_TYPE_WEB)) {
+            return WEB_MUCHO;
         }
 
         return null;
@@ -87,6 +93,10 @@ public class Setting {
 
         return null;
     }
+
+
+
+
 
 
 }

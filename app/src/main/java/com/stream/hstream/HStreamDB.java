@@ -2,14 +2,20 @@ package com.stream.hstream;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.provider.Settings;
+import android.text.TextUtils;
+import android.text.format.DateUtils;
 import android.util.Log;
 
+import com.danikula.videocache.Source;
 import com.stream.dao.DaoMaster;
 import com.stream.dao.DaoSession;
 import com.stream.dao.DownloadDao;
 import com.stream.dao.DownloadInfo;
 import com.stream.dao.Favorite;
 import com.stream.dao.FavoriteDao;
+import com.stream.dao.SourceDao;
+import com.stream.dao.SourceInfo;
 import com.stream.dao.Suggestion;
 import com.stream.dao.SuggestionDao;
 import com.stream.util.SqlUtils;
@@ -25,6 +31,9 @@ public class HStreamDB {
     private static String TAG = HStreamDB.class.getSimpleName();
     private static final String DB_NAME = "stream_database.db";
     private static final int MAX_ENTRIES = 50;
+
+    //default out time in 15 day
+    private static final long SOURCE_OUT_TIME = 7 * 24 * 24 * 60 * 1000;
 
     private static DaoSession sDaoSession;
 
@@ -153,5 +162,82 @@ public class HStreamDB {
         if(list != null && list.size() > 0) {
             dao.deleteByKey(list.get(0).getId());
         }
+    }
+
+    /**
+     * find the soruce by token
+     * @param token
+     * @return
+     */
+    public synchronized static List<SourceInfo> querySoruceInfoByToken(String token, boolean checkOutTime) {
+        if(TextUtils.isEmpty(token)) {
+            return null;
+        }
+
+        long out_time = System.currentTimeMillis() - SOURCE_OUT_TIME;
+        Log.d(TAG, "source out time: " + out_time);
+        SourceDao dao = sDaoSession.getSourceDao();
+
+        List<SourceInfo> list = null;
+        if(checkOutTime) {
+            list = dao.queryBuilder().where(SourceDao.Properties.Token.eq(token),
+                    SourceDao.Properties.Upd_time.ge(out_time)).orderAsc(SourceDao.Properties.Upd_time).list();
+        } else {
+            list = dao.queryBuilder().where(SourceDao.Properties.Token.eq(token))
+                    .orderAsc(SourceDao.Properties.Upd_time).list();
+        }
+
+        return list;
+    }
+
+    /**
+     * save the source
+     * @param sourceInfo
+     */
+    public synchronized static void putSourceInfo(SourceInfo sourceInfo) {
+        SourceDao dao = sDaoSession.getSourceDao();
+        if(null != sourceInfo.getId() && null != dao.load(sourceInfo.getId())) {
+            dao.update(sourceInfo);
+        } else {
+            dao.insert(sourceInfo);
+        }
+    }
+
+    /**
+     * delete by token
+     * @param token
+     */
+    public synchronized static void deleteByToken(String token) {
+        try {
+            SourceDao sourceDao = sDaoSession.getSourceDao();
+            String selection = SourceDao.Properties.Token.columnName + " = ?";
+
+            String[] args = new String[]{token};
+            sourceDao.getDatabase().delete(sourceDao.getTablename(), selection, args);
+
+        } catch (RuntimeException e) {
+            Log.e(TAG, "deleteByToken", e);
+        }
+    }
+
+    /**
+     * check source by token, check exist and out time
+     * @param token
+     * @return
+     */
+    public synchronized static boolean existSourceByToken(String token) {
+        try {
+            long out_time = System.currentTimeMillis() - SOURCE_OUT_TIME;
+            SourceDao sourceDao = sDaoSession.getSourceDao();
+            long count = sourceDao.queryBuilder().where(SourceDao.Properties.Upd_time.le(out_time)).count();
+
+            if(count > 0) {
+                return true;
+            }
+        } catch (RuntimeException e) {
+            Log.e(TAG, "existSourceByToken", e);
+        }
+
+        return false;
     }
 }

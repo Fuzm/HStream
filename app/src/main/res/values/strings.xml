@@ -28,6 +28,8 @@
     <!-- Gallery List -->
     <string name="gallery_list_search_bar_hint_exhentai">Search HStream</string>
     <string name="gl_get_source_fail">Can not find the video source</string>
+    <string name="source_no_found">source no find</string>
+    <string name="source_loading">source loading</string>
 
     <!-- Title for error alert when a video cannot be played.  it can be used by any app. -->
     <string name="VideoView_error_title">Video problem</string>
@@ -70,5 +72,57 @@
 
     <!-- Favorite -->
     <string name="no_favorite_info">Favorite items will be added here</string>
+
+    <string name="error_status_code_400" translatable="false">Bad Request</string>
+    <string name="error_status_code_401" translatable="false">Unauthorized</string>
+    <string name="error_status_code_402" translatable="false">Payment Required</string>
+    <string name="error_status_code_403" translatable="false">Forbidden</string>
+    <string name="error_status_code_404" translatable="false">Not Found</string>
+    <string name="error_status_code_405" translatable="false">Method Not Allowed</string>
+    <string name="error_status_code_406" translatable="false">Not Acceptable</string>
+    <string name="error_status_code_407" translatable="false">Proxy Authentication Required</string>
+    <string name="error_status_code_408" translatable="false">Request Timeout</string>
+    <string name="error_status_code_409" translatable="false">Conflict</string>
+    <string name="error_status_code_410" translatable="false">Gone</string>
+    <string name="error_status_code_411" translatable="false">Length Required</string>
+    <string name="error_status_code_412" translatable="false">Precondition Failed</string>
+    <string name="error_status_code_413" translatable="false">Request Entity Too Large</string>
+    <string name="error_status_code_414" translatable="false">Request-URI Too Long</string>
+    <string name="error_status_code_415" translatable="false">Unsupported Media Type</string>
+    <string name="error_status_code_416" translatable="false">Requested Range Not Satisfiable</string>
+    <string name="error_status_code_417" translatable="false">Expectation Failed</string>
+
+    <string name="error_status_code_500" translatable="false">Internal Server Error</string>
+    <string name="error_status_code_501" translatable="false">Not Implemented</string>
+    <string name="error_status_code_502" translatable="false">Bad Gateway</string>
+    <string name="error_status_code_503" translatable="false">Service Unavailable</string>
+    <string name="error_status_code_504" translatable="false">Gateway Timeout</string>
+    <string name="error_status_code_505" translatable="false">HTTP Version Not Supported</string>
+
+    <string name="error_bad_status_code">Bad status code: %d</string>
+    <string name="error_timeout">Timeout</string>
+    <string name="error_unknown_host">Unknown host</string>
+    <string name="error_redirection">Too many redirections</string>
+    <string name="error_socket">Network error</string>
+    <string name="error_unknown">Weird</string>
+    <string name="error_cant_find_activity">Can\'t find the application</string>
+    <string name="error_cannot_parse_the_url">Can\'t parse the url</string>
+    <string name="error_not_folder_path">Not folder path</string>
+    <string name="error_no_provider">No provider</string>
+    <string name="error_decoding_failed">Decoding failed</string>
+    <string name="error_not_found">Not found</string>
+    <string name="error_empty">Empty</string>
+    <string name="error_invalid_zip_file">Invalid zip file</string>
+    <string name="error_reading_failed">Reading Failed</string>
+    <string name="error_write_failed">Write failed</string>
+    <string name="error_parse_error">Parse error</string>
+    <string name="error_509">509</string>
+    <string name="error_invalid_url">Invalid url</string>
+    <string name="error_get_ptoken_error">Get pToken error</string>
+    <string name="error_invalid_specify_gallery">Keyword should looks like \"618395 0439fa3666\" for specify gallery</string>
+    <string name="error_cant_create_temp_file">Can\'t create temp file</string>
+    <string name="error_cant_save_image">Can\'t save image</string>
+
+    <string name="msg_last_page">last page -_-</string>
 
 </resources>

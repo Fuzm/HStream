@@ -56,8 +56,7 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
         holder.mVideoPlayer.setUp(null, videoInfo.title, TuVideoPlayer.MODE_NORMAL_SCREEN);
         holder.mVideoPlayer.setOnFavoriteListener(new FavoriteVideoListener(videoInfo));
         holder.setThumb(mContext, videoInfo.token, videoInfo.thumb);
-        holder.setSourceUrl(videoInfo.url);
-        holder.requiredSourceInfo(videoInfo.title, videoInfo.url);
+        holder.requiredSourceInfo(videoInfo.token, videoInfo.title, videoInfo.url);
 
         holder.mDownloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,7 +69,8 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
 
             @Override
             public void onClick(View v) {
-                holder.requiredSourceInfo(videoInfo.title, videoInfo.url);
+                //force refresh video source data
+                holder.requiredSourceInfo(videoInfo.token, videoInfo.title, videoInfo.url, true);
             }
         });
     }

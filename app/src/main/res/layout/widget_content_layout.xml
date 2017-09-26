@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <com.stream.widget.ProgressView
+        android:id="@+id/progress"
+        style="@style/ProgressView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"/>
+
+    <TextView
+        android:id="@+id/tip"
+        android:layout_width="228dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:drawablePadding="16dp"
+        style="@style/TextAppearance.AppCompat.Medium"/>
+
+    <FrameLayout
+        android:id="@+id/content_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.hippo.refreshlayout.RefreshLayout
+            android:id="@+id/refresh_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.hippo.easyrecyclerview.EasyRecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"/>
+
+        </com.hippo.refreshlayout.RefreshLayout>
+
+        <com.hippo.easyrecyclerview.FastScroller
+            android:id="@+id/fast_scroller"
+            android:layout_width="30dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="right"
+            android:paddingLeft="20dp"
+            android:paddingRight="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"/>
+
+    </FrameLayout>
+
+
+</merge>

@@ -1,6 +1,7 @@
 package com.stream.client;
 
 import android.util.Log;
+import android.widget.VideoView;
 
 import com.stream.client.data.VideoSourceInfo;
 import com.stream.client.parser.VideoListParser;
@@ -26,12 +27,16 @@ public class HsEngine {
     private static final String TAG = HsEngine.class.getSimpleName();
 
     public static VideoListParser.Result getVideoList(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
+        Log.d(TAG, "get video list by " + url);
+
         Request request = new EhRequestBuilder(url).addHeader("Connection", "close").build();
         Call call = okHttpClient.newCall(request);
 
         if (task != null) {
             task.setCall(call);
         }
+
+
 
         String body = null;
         Headers headers = null;
@@ -64,6 +69,8 @@ public class HsEngine {
     }
 
     public static VideoSourceParser.Result getVideoDetail(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
+        Log.d(TAG, "get video detail by " + url);
+
         Request request = new EhRequestBuilder(url).addHeader("Connection", "close").build();
         Call call = okHttpClient.newCall(request);
 
@@ -88,26 +95,20 @@ public class HsEngine {
             throw e;
         }
 
-        List<VideoSourceInfo> list = new ArrayList<VideoSourceInfo>();
-        for(VideoSourceInfo info: result.mVideoSourceInfoList) {
-            if(info.url != null && !info.url.equals("")) {
-                VideoUrlParser.Result urlResult = getVideoUrl(task, okHttpClient, info.url);
-                if(urlResult.url != null) {
-                    info.videoUrl = urlResult.url;
-                    list.add(info);
-                }
-
-                Log.d(TAG, info.name + "--------------" + urlResult.url);
-            }
-
-        }
-
-        result.mVideoSourceInfoList = list;
-
         return result;
     }
 
-    private static VideoUrlParser.Result getVideoUrl(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
+    /**
+     * web stream use now
+     * @param task
+     * @param okHttpClient
+     * @param url
+     * @return
+     * @throws Exception
+     */
+    public static VideoUrlParser.Result getVideoUrl(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
+        Log.d(TAG, "get video url by " + url);
+
         Request request = new EhRequestBuilder(url).addHeader("Connection", "close").build();
         Call call = okHttpClient.newCall(request);
 

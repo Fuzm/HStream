@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.hippo.beerbelly.SimpleDiskCache;
+import com.danikula.videocache.HttpProxyCacheServer;
 import com.hippo.conaco.Conaco;
 import com.hippo.image.ImageBitmap;
 import com.hippo.yorozuya.OSUtils;
@@ -15,7 +15,6 @@ import com.stream.okhttp.MobileRequestBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.util.concurrent.TimeUnit;
 
@@ -40,12 +39,14 @@ public class HStreamApplication extends Application {
     private Conaco<ImageBitmap> mConaco;
     private ImageBitmapHelper mImageBitmapHelper;
     private DownloadManager mDownloadManager;
+    private HttpProxyCacheServer mCacheServer;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
         HStreamDB.initialize(this);
+        GetText.initialize(this);
     }
 
     public static OkHttpClient getOkHttpClient(Context context) {
@@ -108,6 +109,17 @@ public class HStreamApplication extends Application {
             application.mDownloadManager = new DownloadManager(application);
         }
         return application.mDownloadManager;
+    }
+
+    // get video cache server
+    public static HttpProxyCacheServer getHttpProxyCacheServer(Context context) {
+        HStreamApplication application = (HStreamApplication) context.getApplicationContext();
+        if(application.mCacheServer == null) {
+            application.mCacheServer = new HttpProxyCacheServer.Builder(application)
+                    .maxCacheSize(getMemoryCacheMaxSize())
+                    .build();
+        }
+        return application.mCacheServer;
     }
 
     public static void main(String[] args) throws IOException {

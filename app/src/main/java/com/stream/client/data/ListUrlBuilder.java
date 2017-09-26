@@ -52,19 +52,7 @@ public class ListUrlBuilder implements Cloneable, Parcelable{
     }
 
     public String build() {
-        UrlBuilder builder = new UrlBuilder(HsUrl.getHost());
-
-        String buildUrl = builder.build();
-        if(mPageIndex > 0) {
-            buildUrl = buildUrl + HsUrl.PAGE_STREAM + mPageIndex;
-        }
-
-        if(!TextUtils.isEmpty(mKeyword)) {
-            buildUrl = buildUrl + HsUrl.SEARCH_STREAM + mKeyword;
-        }
-
-        Log.d(TAG, "build url :" + buildUrl);
-        return buildUrl;
+        return new UrlBuilder(HsUrl.getPageUrl(mPageIndex, mKeyword)).build();
     }
 
     public String build(String url) {

@@ -18,10 +18,16 @@ public class ViewTransition {
     private final View[] mViews;
     private int mShownView = -1;
 
+    private OnShowViewListener mOnShowViewListener;
+
     public ViewTransition(View... views) {
         mViews = views;
 
         showView(0, false);
+    }
+
+    public boolean showView(int shownView) {
+        return showView(shownView, true);
     }
 
     public boolean showView(int shownView, boolean animate) {
@@ -86,6 +92,18 @@ public class ViewTransition {
             }
         });
         oa2.start();
+    }
+
+    public int getShownViewIndex() {
+        return mShownView;
+    }
+
+    public void setOnShowViewListener(OnShowViewListener listener) {
+        mOnShowViewListener = listener;
+    }
+
+    public interface OnShowViewListener {
+        void onShowView(View hiddenView, View shownView);
     }
 
 }

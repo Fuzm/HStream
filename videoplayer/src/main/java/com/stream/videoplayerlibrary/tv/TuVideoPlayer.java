@@ -2,7 +2,12 @@ package com.stream.videoplayerlibrary.tv;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
@@ -18,6 +23,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.RotateAnimation;
 import android.widget.*;
 
 import com.stream.videoplayerlibrary.R;
@@ -26,6 +32,7 @@ import com.stream.videoplayerlibrary.common.VideoUtils;
 
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.Map;
 
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
@@ -48,8 +55,12 @@ public final class TuVideoPlayer extends FrameLayout
     public static final int MODE_NORMAL_SCREEN = 1;
     public static final int MODE_FULL_SCREEN = 2;
 
+    //private static TuVideoPlayer sFullScreenPlayer;
+
     private Context mContext;
     private String mUrl;
+    private Map<String, String> mHeaders;
+
     private int mCurrentState = STATE_IDLE;
     private int mCurrentScreenMode = MODE_NORMAL_SCREEN;
     private boolean mShowing = false;
@@ -87,31 +98,6 @@ public final class TuVideoPlayer extends FrameLayout
     private AppCompatImageView mScreenControlButton;
 
     private OnFavoriteListener mFavoriteListener;
-
-//    private OnTouchListener mTouchListener = new OnTouchListener() {
-//        @Override
-//        public boolean onTouch(View v, MotionEvent event) {
-//            if(mCurrentState == STATE_PLAYING) {
-//                hide();
-//            }
-//            return false;
-//        }
-//    };
-
-//    private OnTouchListener mLayoutTouchListener = new OnTouchListener() {
-//        @Override
-//        public boolean onTouch(View v, MotionEvent event) {
-//            switch (event.getAction()) {
-//                case MotionEvent.ACTION_DOWN:
-//                    show(0);
-//                    break;
-//                case MotionEvent.ACTION_UP:
-//                    show(mShowTime);
-//                    break;
-//            }
-//            return true;
-//        }
-//    };
 
     private final SeekBar.OnSeekBarChangeListener mSeekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
 
@@ -158,7 +144,7 @@ public final class TuVideoPlayer extends FrameLayout
         private boolean isWait = false;
         @Override
         public void run() {
-            if(mCurrentState == STATE_PLAYING || mCurrentState == STATE_PAUSE) {
+            if(isShown() && (mCurrentState == STATE_PLAYING || mCurrentState == STATE_PAUSE)) {
                 long oldPosition = mCurrentPosition;
                 mCurrentPosition = mManager.getCurrentPosition();
                 if(oldPosition == mCurrentPosition && mCurrentState == STATE_PLAYING ) {
@@ -178,7 +164,7 @@ public final class TuVideoPlayer extends FrameLayout
             if(!isShown() && mManager != null) {
                 Log.d(TAG, "frame not show, pause the video player");
                 //mManager.releaseMediaPlayer();
-                mManager.pause();
+                pause();
             }
         }
     };
@@ -293,6 +279,7 @@ public final class TuVideoPlayer extends FrameLayout
     }
 
     public void pause() {
+        setCurrentStateAndUi(STATE_PAUSE);
         if(mManager != null) {
             mManager.pause();
         }
@@ -315,7 +302,12 @@ public final class TuVideoPlayer extends FrameLayout
     }
 
     public void setVideoPath(String url) {
+        setVideoPath(url, null);
+    }
+
+    public void setVideoPath(String url, Map<String, String> headers) {
         mUrl = url;
+        mHeaders = headers;
         prepareMediaPlayer();
     }
 
@@ -358,7 +350,7 @@ public final class TuVideoPlayer extends FrameLayout
         Log.d(TAG, "prepare mediaperl by instance-" + this.hashCode());
 
         TuIjkMediaPlayerManager.releaseManager(mManager.isCurrentVideoPlayer(this));
-        mManager.setVideoPath(mUrl);
+        mManager.setVideoPath(mUrl, mHeaders);
         mManager.setVideoPlayer(this);
 
         TextureView textureView = TuIjkMediaPlayerManager.initTextureView(getContext());
@@ -475,7 +467,7 @@ public final class TuVideoPlayer extends FrameLayout
         }
     }
 
-    public void updateSrceenControlView(int mode){
+    private void updateSrceenControlView(int mode){
         if(mode == MODE_FULL_SCREEN) {
             mScreenControlButton.setImageResource(R.drawable.ic_screen_normal);
         } else {
@@ -485,7 +477,7 @@ public final class TuVideoPlayer extends FrameLayout
 
     public void startFullScreen() {
         AppCompatActivity activity =  VideoUtils.getAppCompActivity(mContext);
-        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         Window window = activity.getWindow();
         window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION,WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
@@ -644,7 +636,7 @@ public final class TuVideoPlayer extends FrameLayout
 
     @Override
     public void onBufferingUpdate(IjkMediaPlayer mp, int percent) {
-        Log.d(TAG, "buffer percent: " + percent);
+        //Log.d(TAG, "buffer percent: " + percent);
         mCurrentBufferPercentage = percent;
 
         int second = percent * MAX_PROGRESS / 100;
@@ -777,7 +769,7 @@ public final class TuVideoPlayer extends FrameLayout
         mManager.seekTo(pos);
     }
 
-    public class VideoGestureListener implements GestureDetector.OnGestureListener {
+    private class VideoGestureListener implements GestureDetector.OnGestureListener {
 
         private boolean mUpAndDown = false;
         private boolean mLeftAndRight = false;
@@ -856,4 +848,64 @@ public final class TuVideoPlayer extends FrameLayout
 
         void onFavorite(String url);
     }
+
+    public static class FullScreenListener implements SensorEventListener {
+
+        private long lastAutoFullscreenTime;
+        private Context mContext;
+        private SensorManager mSensorManager;
+
+        public FullScreenListener(Context context) {
+            mContext = context;
+            mSensorManager = (SensorManager) mContext.getSystemService(Context.SENSOR_SERVICE);
+        }
+
+        public void registerListener() {
+            Sensor accelerometerSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            mSensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+
+        public void unregistetListener() {
+            mSensorManager.unregisterListener(this);
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if(TuIjkMediaPlayerManager.getManager() != null) {
+                VideoPlayer videoPlayer = TuIjkMediaPlayerManager.getManager().getVideoPlayer();
+                if(videoPlayer != null && videoPlayer.getCurrentScreenMode() == MODE_FULL_SCREEN) {
+                    final float x = event.values[SensorManager.DATA_X];
+                    float y = event.values[SensorManager.DATA_Y];
+                    float z = event.values[SensorManager.DATA_Z];
+
+                    Log.d(TAG, "current x : " + x + ", current y : " + y);
+                    //过滤掉用力过猛会有一个反向的大数值
+                    if (((x > -15 && x < -5) || (x < 15 && x > 5)) && Math.abs(y) < 1.5) {
+                        if ((System.currentTimeMillis() - lastAutoFullscreenTime) > 5000) {
+
+                            AppCompatActivity activity =  VideoUtils.getAppCompActivity(mContext);
+                            int orientation = -1;
+                            if (x > 0) {
+                                orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+                            } else {
+                                orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+                            }
+
+                            //if orientation same to current, nothing to do
+                            if(activity.getRequestedOrientation() != orientation) {
+                                activity.setRequestedOrientation(orientation);
+                            }
+
+                            lastAutoFullscreenTime = System.currentTimeMillis();
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+    }
+
 }

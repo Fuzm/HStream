@@ -8,6 +8,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.os.Process;
+import android.renderscript.RenderScript;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
@@ -16,6 +18,7 @@ import android.view.ViewGroup;
 import com.stream.videoplayerlibrary.common.ResizeTextureView;
 
 import java.io.IOException;
+import java.util.Map;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -37,7 +40,10 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
 
     private VideoPlayer mVideoPlayer;
     private IjkMediaPlayer mMediaPlayer;
+
     private String mUri;
+    private Map<String, String> mHeaders;
+
     private int mAudioSession;
     private int mSurfaceWidth;
     private int mSurfaceHeight;
@@ -45,6 +51,13 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
     private HandlerThread mMediaHandlerThread;
     private MediaHandler mMediaHandler;
     private Handler mainThreadHandler;
+
+    private TuIjkMediaPlayerManager() {
+        mMediaHandlerThread = new HandlerThread(TAG, Process.THREAD_PRIORITY_URGENT_AUDIO);
+        mMediaHandlerThread.start();
+        mMediaHandler = new MediaHandler((mMediaHandlerThread.getLooper()));
+        mainThreadHandler = new Handler();
+    }
 
     public synchronized static TuIjkMediaPlayerManager instance() {
         if(sTuMediaPlayerManager == null) {
@@ -54,11 +67,8 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
         return sTuMediaPlayerManager;
     }
 
-    private TuIjkMediaPlayerManager() {
-        mMediaHandlerThread = new HandlerThread(TAG);
-        mMediaHandlerThread.start();
-        mMediaHandler = new MediaHandler((mMediaHandlerThread.getLooper()));
-        mainThreadHandler = new Handler();
+    public synchronized static TuIjkMediaPlayerManager getManager() {
+        return sTuMediaPlayerManager;
     }
 
     public static TextureView initTextureView(Context context) {
@@ -93,7 +103,6 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
             sSavedSurfaceTexture = null;
             //sTuMediaPlayerManager.mUri = null;
         }
-
     }
 
     public static TextureView getCurrentTextureView() {
@@ -116,12 +125,17 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
         }
     }
 
-    public void setVideoPath(String uri) {
+    public void setVideoPath(String uri, Map<String, String> headers) {
         mUri = uri;
+        mHeaders = headers;
     }
 
     public String getVideoPath() {
         return mUri;
+    }
+
+    public Map<String, String> getHeaders() {
+        return mHeaders;
     }
 
     public void prepare() {
@@ -203,7 +217,9 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
             mainThreadHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    mVideoPlayer.onBufferingUpdate(iMediaPlayer, i);
+                    if(mVideoPlayer != null) {
+                        mVideoPlayer.onBufferingUpdate(iMediaPlayer, i);
+                    }
                 }
             });
         }
@@ -282,9 +298,19 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
                         mMediaPlayer.setOnErrorListener(mErrorListener);
                         mMediaPlayer.setOnBufferingUpdateListener(mBufferingUpdateListener);
 
+                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
+                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);
+                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 48);
+                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 8);
+                        mMediaPlayer.setOption(1, "analyzemaxduration", 100L);
+                        mMediaPlayer.setOption(1, "probesize", 10240L);
+                        mMediaPlayer.setOption(1, "flush_packets", 1L);
+                        mMediaPlayer.setOption(4, "packet-buffering", 0L);
+                        mMediaPlayer.setOption(4, "framedrop", 1L);
+
                         //mMediaPlayer.setDataSource(getContext(), mUri, null);
                         Log.d(TAG, "play url: " + mUri);
-                        mMediaPlayer.setDataSource(mUri);
+                        mMediaPlayer.setDataSource(mUri, mHeaders);
                         mMediaPlayer.setSurface(new Surface(sSavedSurfaceTexture));
                         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                         mMediaPlayer.setScreenOnWhilePlaying(true);

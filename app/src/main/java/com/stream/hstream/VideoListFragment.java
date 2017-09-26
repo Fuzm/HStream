@@ -5,6 +5,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -43,6 +45,8 @@ import com.stream.widget.FabLayout;
 import com.stream.widget.SearchBar;
 import com.stream.widget.VideoAdapter;
 
+import static android.content.Context.SENSOR_SERVICE;
+
 /**
  * Created by Fuzm on 2017/3/24 0024.
  */
@@ -72,6 +76,9 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     private DrawerArrowDrawable mLeftDrawable;
     private AddDeleteDrawable mRightDrawable;
 
+    private SensorManager mSensorManager;
+    private TuVideoPlayer.FullScreenListener mFullScreenListener;
+
     private boolean mHasFirstRefresh = false;
     private VideoInfo mClickVideo;
     private long mPressBackTime = 0;
@@ -82,6 +89,8 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
             super.onScrolled(recyclerView, dx, dy);
         }
     };
+
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -94,6 +103,8 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         if (savedInstanceState != null) {
             onRestore(savedInstanceState);
         }
+
+        mFullScreenListener = new TuVideoPlayer.FullScreenListener(context);
     }
 
     private void onRestore(Bundle savedInstanceState) {
@@ -107,6 +118,12 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
 
         outState.putBoolean(KEY_HAS_FIRST_REFRESH, mHasFirstRefresh);
         outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mFullScreenListener.registerListener();
     }
 
     @Override
@@ -375,6 +392,11 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     public class VideoListHelper extends ContentLayout.ContentHelper<VideoInfo> {
 
         @Override
+        protected Context getContext() {
+            return VideoListFragment.this.getContext();
+        }
+
+        @Override
         public void getPageData(int taskId, int page, int type) {
             //Log.d(TAG, "query page :" + page);
             mUrlBuilder.setPageIndex(page);
@@ -505,6 +527,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         super.onDestroy();
 
         TuIjkMediaPlayerManager.releaseManager();
+        mFullScreenListener.unregistetListener();
 
         if(mClient != null) {
             mClient = null;

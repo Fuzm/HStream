@@ -1,22 +1,32 @@
 package com.stream.widget;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.design.widget.TabLayout;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.hippo.easyrecyclerview.EasyRecyclerView;
+import com.hippo.easyrecyclerview.FastScroller;
+import com.hippo.easyrecyclerview.HandlerDrawable;
 import com.hippo.easyrecyclerview.LayoutManagerUtils;
 import com.hippo.refreshlayout.RefreshLayout;
 import com.hippo.yorozuya.IntIdGenerator;
+import com.hippo.yorozuya.ResourcesUtils;
 import com.hippo.yorozuya.collect.IntList;
+import com.stream.hstream.GetText;
 import com.stream.hstream.R;
+import com.stream.util.DrawableManager;
+import com.stream.util.ExceptionUtils;
+import com.stream.widget.view.ViewTransition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +37,18 @@ import java.util.List;
 
 public class ContentLayout extends FrameLayout{
 
-    private EasyRecyclerView mRecyclerView;
-    private ContentHelper mContentHelper;
+    private ProgressView mProgressView;
+    private TextView mTipView;
+    private ViewGroup mContentView;
+
     private RefreshLayout mRefreshLayout;
+    private EasyRecyclerView mRecyclerView;
+    private FastScroller mFastScroller;
+
+    private ContentHelper mContentHelper;
+
+    private int mRecyclerViewOriginTop;
+    private int mRecyclerViewOriginBottom;
 
     public ContentLayout(Context context) {
         super(context);
@@ -47,10 +66,36 @@ public class ContentLayout extends FrameLayout{
     }
 
     private void init(Context context) {
-        LayoutInflater.from(context).inflate(R.layout.content_video_list, this);
+        LayoutInflater.from(context).inflate(R.layout.widget_content_layout, this);
 
-        mRefreshLayout = (RefreshLayout) findViewById(R.id.refresh_layout);
+        mProgressView = (ProgressView) findViewById(R.id.progress);
+        mTipView = (TextView) findViewById(R.id.tip);
+        mContentView = (ViewGroup) findViewById(R.id.content_view);
+
+        mRefreshLayout = (RefreshLayout) mContentView.findViewById(R.id.refresh_layout);
+        mFastScroller = (FastScroller) mContentView.findViewById(R.id.fast_scroller);
         mRecyclerView = (EasyRecyclerView) mRefreshLayout.findViewById(R.id.recycler_view);
+
+        mFastScroller.attachToRecyclerView(mRecyclerView);
+        HandlerDrawable drawable = new HandlerDrawable();
+        drawable.setColor(ResourcesUtils.getAttrColor(context, R.attr.colorAccent));
+        mFastScroller.setHandlerDrawable(drawable);
+
+        mRefreshLayout.setHeaderColorSchemeResources(
+                R.color.loading_indicator_red,
+                R.color.loading_indicator_purple,
+                R.color.loading_indicator_blue,
+                R.color.loading_indicator_cyan,
+                R.color.loading_indicator_green,
+                R.color.loading_indicator_yellow);
+        mRefreshLayout.setFooterColorSchemeResources(
+                R.color.loading_indicator_red,
+                R.color.loading_indicator_blue,
+                R.color.loading_indicator_green,
+                R.color.loading_indicator_orange);
+
+        mRecyclerViewOriginTop = mRecyclerView.getPaddingTop();
+        mRecyclerViewOriginBottom = mRecyclerView.getPaddingBottom();
     }
 
     public EasyRecyclerView getRecyclerView() {
@@ -76,7 +121,7 @@ public class ContentLayout extends FrameLayout{
         super.onRestoreInstanceState(mContentHelper.restoreInstanceState(state));
     }
 
-    public abstract static class ContentHelper <E extends Parcelable> {
+    public abstract static class ContentHelper <E extends Parcelable> implements ViewTransition.OnShowViewListener {
 
         private static final String TAG = ContentHelper.class.getSimpleName();
 
@@ -109,10 +154,17 @@ public class ContentLayout extends FrameLayout{
         private int mCurrentTaskId;
         private int mCurrentTaskType;
 
+        private ProgressView mProgressView;
+        private TextView mTipView;
+        private ViewGroup mContentView;
+
         private RefreshLayout mRefreshLayout;
         private EasyRecyclerView mRecyclerView;
 
+        private ViewTransition mViewTransition;
         private IntList mPageDivider = new IntList();
+
+        private String mEmptyString = "No hint";
 
         private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
             @Override
@@ -146,23 +198,71 @@ public class ContentLayout extends FrameLayout{
                     getPageData(mCurrentTaskId, mCurrentTaskPage, mCurrentTaskType);
                 } else {
                     Log.e(TAG, "END PAGE");
+                    Toast.makeText(getContext(), GetText.getString(R.string.msg_last_page), Toast.LENGTH_SHORT).show();
+                    mRefreshLayout.setHeaderRefreshing(false);
+                    mRefreshLayout.setFooterRefreshing(false);
                 }
             }
         };
 
         private void init(ContentLayout contentLayout) {
-            mRefreshLayout = contentLayout.getRefreshLayout();
-            mRecyclerView = contentLayout.getRecyclerView();
+            mProgressView = contentLayout.mProgressView;
+            mTipView = contentLayout.mTipView;
+            mContentView = contentLayout.mContentView;
+
+            mRefreshLayout = contentLayout.mRefreshLayout;
+            mRecyclerView = contentLayout.mRecyclerView;
+
+            Drawable drawable = DrawableManager.getDrawable(getContext(), R.drawable.big_weird_face);
+            drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+            mTipView.setCompoundDrawables(null, drawable, null, null);
+
+            mViewTransition = new ViewTransition(mContentView, mProgressView, mTipView);
+            mViewTransition.setOnShowViewListener(this);
 
             mRefreshLayout.setOnRefreshListener(mOnRefreshListener);
             mRecyclerView.setOnScrollListener(mOnScrollListener);
+
+            mTipView.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    refresh();
+                }
+            });
         }
+
+        protected abstract Context getContext();
 
         public abstract void getPageData(int taskId, int page, int type);
 
         protected abstract void notifyDataSetChanged();
 
         protected abstract void notifyItemRangeInserted(int positionStart, int itemCount);
+
+        @Override
+        public void onShowView(View hiddenView, View shownView) {
+        }
+
+        public void showProgressBar() {
+            showProgressBar(true);
+        }
+
+        public void showProgressBar(boolean animation) {
+            mViewTransition.showView(1, animation);
+        }
+
+        public void showContent() {
+            mViewTransition.showView(0);
+        }
+
+        public void showText(CharSequence text) {
+            mTipView.setText(text);
+            mViewTransition.showView(2);
+        }
+
+        public void showEmptyString() {
+            showText(mEmptyString);
+        }
 
         public void onGetPageData(int taskId, List<E> data) {
             if(mCurrentTaskId == taskId) {
@@ -175,9 +275,16 @@ public class ContentLayout extends FrameLayout{
                         mPageDivider.clear();
                         mPageDivider.add(data.size());
 
-                        mData.clear();
-                        mData.addAll(data);
-                        notifyDataSetChanged();
+                        if(data.isEmpty()) {
+                            mData.clear();
+                            notifyDataSetChanged();
+                            showEmptyString();
+                        } else {
+                            mData.clear();
+                            mData.addAll(data);
+                            notifyDataSetChanged();
+                            showContent();
+                        }
 
                         break;
                     case TYPE_PRE_PAGE :
@@ -189,8 +296,17 @@ public class ContentLayout extends FrameLayout{
                         mPageDivider.add(0, datasize);
                         mStartPage--;
 
-                        mData.addAll(0, data);
-                        notifyItemRangeInserted(0, data.size());
+                        if(data.isEmpty()) {
+                            if(mData.isEmpty()) {
+                                showEmptyString();
+                            } else {
+                                showContent();
+                            }
+                        } else {
+                            mData.addAll(0, data);
+                            notifyItemRangeInserted(0, data.size());
+                            showContent();
+                        }
 
                         break;
                     case TYPE_NEXT_PAGE :
@@ -200,8 +316,19 @@ public class ContentLayout extends FrameLayout{
                         mPageDivider.add(oldDataSize + datasize);
                         mEndPage++;
 
-                        mData.addAll(oldDataSize, data);
-                        notifyItemRangeInserted(oldDataSize, data.size());
+                        if(data.isEmpty()) {
+                            if(mData.isEmpty()) {
+                                showEmptyString();
+                            } else {
+                                showContent();
+                            }
+
+                        } else {
+                            mData.addAll(oldDataSize, data);
+                            notifyItemRangeInserted(oldDataSize, data.size());
+
+                            showContent();
+                        }
 
                         break;
                     case TYPE_SOMEWHERE:
@@ -211,9 +338,16 @@ public class ContentLayout extends FrameLayout{
                         mPageDivider.clear();
                         mPageDivider.add(data.size());
 
-                        mData.clear();
-                        mData.addAll(data);
-                        notifyDataSetChanged();
+                        if(data.isEmpty()) {
+                            mData.clear();
+                            notifyDataSetChanged();
+                            showEmptyString();
+                        } else {
+                            mData.clear();
+                            mData.addAll(data);
+                            notifyDataSetChanged();
+                            showContent();
+                        }
 
                         LayoutManagerUtils.scrollToPositionWithOffset(mRecyclerView.getLayoutManager(), 0, 0);
                         break;
@@ -310,10 +444,12 @@ public class ContentLayout extends FrameLayout{
         }
 
         public void firstRefresh() {
+            showProgressBar(false);
             doRefresh();
         }
 
         public void refresh() {
+            showProgressBar();
             doRefresh();
         }
 
@@ -321,6 +457,20 @@ public class ContentLayout extends FrameLayout{
             if (mCurrentTaskId == taskId) {
                 mRefreshLayout.setHeaderRefreshing(false);
                 mRefreshLayout.setFooterRefreshing(false);
+
+                String readableError;
+                if (e != null) {
+                    e.printStackTrace();
+                    readableError = ExceptionUtils.getReadableString(e);
+                } else {
+                    readableError = getContext().getString(R.string.error_unknown);
+                }
+
+                if (mViewTransition.getShownViewIndex() == 0) {
+                    Toast.makeText(getContext(), readableError, Toast.LENGTH_SHORT).show();
+                } else {
+                    showText(readableError);
+                }
             }
         }
 
