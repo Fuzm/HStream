@@ -1,4 +1,4 @@
-package com.stream.hstream;
+package com.stream.hstream.fragments;
 
 import android.content.Context;
 import android.graphics.Paint;
@@ -15,6 +15,8 @@ import android.widget.TextView;
 
 import com.daimajia.swipe.SwipeLayout;
 import com.stream.dao.Favorite;
+import com.stream.hstream.HStreamDB;
+import com.stream.hstream.R;
 import com.stream.hstream.adapter.SimpleAdapter;
 import com.stream.hstream.adapter.SimpleHolder;
 import com.stream.scene.ToolBarFragment;

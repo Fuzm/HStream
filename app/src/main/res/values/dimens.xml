@@ -7,7 +7,6 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
 
-    <color name="primary_drawable_light">#8a000000</color>
     <dimen name="content_vertical_margin">51dp</dimen>
 
     <!-- FabLayout -->

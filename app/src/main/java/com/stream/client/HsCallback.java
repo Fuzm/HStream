@@ -1,4 +1,4 @@
-package com.stream.hstream;
+package com.stream.client;
 
 import android.support.v4.app.Fragment;
 

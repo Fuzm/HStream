@@ -50,18 +50,8 @@ public class VideoListParser {
 
         public static Result parse(Document d) {
             Result result = new Result();
-            try {
-                Element element = d.getElementById("wp_page_numbers");
-                if(element != null) {
-                    result.pages = parsePages(element);
-                } else {
-                    result.pages = 0;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                result.pages = 0;
-            }
 
+            result.mVideoInfoList = new ArrayList<>();
             try {
                 List<VideoInfo> infos = new ArrayList<>();
                 Elements elements = d.getElementsByClass("content").get(0).children();
@@ -71,10 +61,31 @@ public class VideoListParser {
                         infos.add(parseVideoInfo(e));
                     }
                 }
-                result.mVideoInfoList = infos;
+
+                if(infos != null && infos.size() > 0) {
+                    result.mVideoInfoList.addAll(infos);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            try {
+                Element element = d.getElementById("wp_page_numbers");
+                if(element != null) {
+                    result.pages = parsePages(element);
+                } else {
+                    result.pages = 0;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                if(result.mVideoInfoList != null && result.mVideoInfoList.size() > 0) {
+                    result.pages = 1;
+                } else {
+                    result.pages = 0;
+                }
+            }
+
             return result;
         }
 
@@ -113,16 +124,6 @@ public class VideoListParser {
 
         public static Result parse(Document d) {
             Result result = new Result();
-
-            try {
-                Element element = d.getElementsByClass("pagenav").get(0);
-                int pages = parsePages(element);
-                result.pages = pages;
-            } catch (Exception e) {
-                e.printStackTrace();
-                result.pages = 0;
-            }
-
             try {
                 List<VideoInfo> infos = new ArrayList<>();
                 Elements elements = d.getElementsByClass("eppostimg");
@@ -133,6 +134,21 @@ public class VideoListParser {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            try {
+                Element element = d.getElementsByClass("pagenav").get(0);
+                int pages = parsePages(element);
+                result.pages = pages;
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                if(result.mVideoInfoList != null && result.mVideoInfoList.size() > 0) {
+                    result.pages = 1;
+                } else {
+                    result.pages = 0;
+                }
+            }
+
             return result;
         }
 
@@ -169,15 +185,7 @@ public class VideoListParser {
         public static Result parse(Document d) {
             Result result = new Result();
 
-            try {
-                Element element = d.getElementsByClass("wp-pagenavi").get(0);
-                int pages = parsePages(element);
-                result.pages = pages;
-            } catch (Exception e) {
-                e.printStackTrace();
-                result.pages = 0;
-            }
-
+            result.mVideoInfoList = new ArrayList<>();
             try {
                 List<VideoInfo> infos = new ArrayList<>();
                 Elements elements = d.getElementsByClass("loop-content").get(0).child(0).children();
@@ -187,9 +195,27 @@ public class VideoListParser {
                         infos.add(parseVideoInfo(e));
                     }
                 }
-                result.mVideoInfoList = infos;
+
+                if(null != infos && infos.size() > 0) {
+                    result.mVideoInfoList.addAll(infos);
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+
+            try {
+                Element element = d.getElementsByClass("wp-pagenavi").get(0);
+                int pages = parsePages(element);
+                result.pages = pages;
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                if(result.mVideoInfoList != null && result.mVideoInfoList.size() > 0) {
+                    result.pages = 1;
+                } else {
+                    result.pages = 0;
+                }
             }
 
             return result;

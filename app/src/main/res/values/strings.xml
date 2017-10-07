@@ -26,7 +26,7 @@
     <string name="error_out_of_range">Out of range</string>
 
     <!-- Gallery List -->
-    <string name="gallery_list_search_bar_hint_exhentai">Search HStream</string>
+    <string name="gallery_list_search_bar_hint_hstream">Search What You Want</string>
     <string name="gl_get_source_fail">Can not find the video source</string>
     <string name="source_no_found">source no find</string>
     <string name="source_loading">source loading</string>

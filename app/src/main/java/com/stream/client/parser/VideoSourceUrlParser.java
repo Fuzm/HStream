@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 public class VideoSourceUrlParser {
 
     public static final Pattern STREAM_URL_PATTERN = Pattern.compile("https?://(?:"
-            + HsUrl.getDomain() + ")([\\w+\\-+]*)");
+            + HsUrl.getDomain() + ")/([\\w+\\-+]*)");
 
     public static final Pattern MUCHO_URL_PATTERN = Pattern.compile("https?://(?:" + HsUrl.getDomain()
             + ")/(\\d+)/(\\w+)/(\\d+)/(\\d+)/(\\d+)/([\\w+\\-+]*)");
@@ -55,19 +55,29 @@ public class VideoSourceUrlParser {
     }
 
     public static void main(String[] args) {
-        String url = "https://muchohentai.com/125468/TIQnb0/2017/09/21/implicity-episode-1-raw/";
-        Matcher m = MUCHO_URL_PATTERN.matcher(url);
+//        String url = "https://muchohentai.com/125468/TIQnb0/2017/09/21/implicity-episode-1-raw/";
+//        Matcher m = MUCHO_URL_PATTERN.matcher(url);
+//
+//        while (m.find()) {
+//            System.out.println("group 0: " + m.group(0));
+//            System.out.println("group 1: " + m.group(1));
+//            System.out.println("group 2: " + m.group(2));
+//            System.out.println("group 3: " + m.group(3));
+//            System.out.println("group 4: " + m.group(4));
+//            System.out.println("group 5: " + m.group(5));
+//            System.out.println("group 6: " + m.group(6));
+//            //System.out.println("group 2: " + m.group(2));
+//        }
 
-        while (m.find()) {
-            System.out.println("group 0: " + m.group(0));
-            System.out.println("group 1: " + m.group(1));
-            System.out.println("group 2: " + m.group(2));
-            System.out.println("group 3: " + m.group(3));
-            System.out.println("group 4: " + m.group(4));
-            System.out.println("group 5: " + m.group(5));
-            System.out.println("group 6: " + m.group(6));
-            //System.out.println("group 2: " + m.group(2));
+        String streamUrl = "http://hentaistream.com/anata-wa-watashi-no-mono-do-s-kanojo-to-do-m-kareshi-episode-02";
+        Matcher streamM = STREAM_URL_PATTERN.matcher(streamUrl);
+
+        while (streamM.find()) {
+            System.out.println("group 0: " + streamM.group(0));
+            System.out.println("group 1: " + streamM.group(1));
+            System.out.println("group 2: " + streamM.group(2));
         }
+
 //        else {
 //            System.out.println("not found");
 //        }

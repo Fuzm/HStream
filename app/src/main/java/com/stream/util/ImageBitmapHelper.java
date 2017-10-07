@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.stream.hstream;
+package com.stream.util;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;

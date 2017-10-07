@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.stream.hstream;
+package com.stream.util;
 
 import android.content.Context;
 import android.content.res.Resources;

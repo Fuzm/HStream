@@ -11,12 +11,17 @@ import com.hippo.yorozuya.OSUtils;
 import com.stream.client.HsClient;
 import com.stream.download.DownloadManager;
 import com.stream.okhttp.MobileRequestBuilder;
+import com.stream.util.GetText;
+import com.stream.util.ImageBitmapHelper;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -54,7 +59,7 @@ public class HStreamApplication extends Application {
         if(application.mOkHttpClient == null) {
             application.mOkHttpClient = new OkHttpClient.Builder()
                     //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.1.103", 9666)))
-                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .connectTimeout(20, TimeUnit.SECONDS)
                     .readTimeout(10, TimeUnit.SECONDS)
                     .writeTimeout(10, TimeUnit.SECONDS)
                     //.cookieJar()

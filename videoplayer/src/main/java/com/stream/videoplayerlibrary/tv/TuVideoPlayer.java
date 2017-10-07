@@ -21,6 +21,7 @@ import android.view.MotionEvent;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.RotateAnimation;
@@ -34,6 +35,8 @@ import java.util.Formatter;
 import java.util.Locale;
 import java.util.Map;
 
+import master.flame.danmaku.danmaku.loader.android.DanmakuLoaderFactory;
+import master.flame.danmaku.danmaku.parser.BaseDanmakuParser;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 /**
@@ -120,6 +123,13 @@ public final class TuVideoPlayer extends FrameLayout
             show(3600000);
             removeCallbacks(mShowProgress);
             removeCallbacks(mBufferWait);
+
+            //slove slide problem
+            ViewParent parent = getParent();
+            while (parent != null) {
+                parent.requestDisallowInterceptTouchEvent(true);
+                parent = parent.getParent();
+            }
         }
 
         @Override
@@ -287,6 +297,10 @@ public final class TuVideoPlayer extends FrameLayout
 
     public void setTitle(CharSequence title) {
         mTextTitle.setText(title);
+    }
+
+    public CharSequence getTitle() {
+        return mTextTitle.getText();
     }
 
     public void setThumb(Drawable drawable) {

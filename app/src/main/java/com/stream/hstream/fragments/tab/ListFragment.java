@@ -1,12 +1,9 @@
-package com.stream.hstream;
+package com.stream.hstream.fragments.tab;
 
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,10 +11,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
-import android.text.style.ImageSpan;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,43 +22,68 @@ import com.stream.client.HsClient;
 import com.stream.client.HsRequest;
 import com.stream.client.data.ListUrlBuilder;
 import com.stream.client.data.VideoInfo;
-import com.stream.client.data.VideoSourceInfo;
 import com.stream.client.parser.VideoListParser;
-import com.stream.client.parser.VideoSourceParser;
 import com.stream.download.DownloadService;
 import com.stream.drawable.AddDeleteDrawable;
-import com.stream.drawable.DrawerArrowDrawable;
+import com.stream.enums.GenreEnum;
+import com.stream.hstream.HStreamApplication;
+import com.stream.client.HsCallback;
+import com.stream.hstream.R;
 import com.stream.scene.SceneFragment;
 import com.stream.util.AppHelper;
-import com.stream.util.DrawableManager;
 import com.stream.videoplayerlibrary.tv.TuIjkMediaPlayerManager;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 import com.stream.widget.ContentLayout;
 import com.stream.widget.EditTextDialogBuilder;
 import com.stream.widget.FabLayout;
-import com.stream.widget.SearchBar;
-import com.stream.widget.VideoAdapter;
+import com.stream.hstream.adapter.VideoAdapter;
 
-import static android.content.Context.SENSOR_SERVICE;
+import junit.framework.Assert;
 
 /**
- * Created by Fuzm on 2017/3/24 0024.
+ * Created by Seven-one on 2017/9/26.
  */
 
-public class VideoListFragment extends SceneFragment implements EasyRecyclerView.OnItemClickListener,
-        FabLayout.OnClickFabListener, FabLayout.OnExpandListener, SearchBar.Helper,
-        SearchBar.OnStateChangeListener {
+public class ListFragment extends SceneFragment implements EasyRecyclerView.OnItemClickListener,
+        FabLayout.OnClickFabListener, FabLayout.OnExpandListener {
 
-    private static final String TAG = VideoListFragment.class.getSimpleName();
+    /**
+     * get fragment for gener list
+     */
+    private GenreEnum mGenreEnum;
+    private String mKeyword;
+
+    public static ListFragment getInstance(GenreEnum genreEnum) {
+        Assert.assertNotNull("genre type not null for list", genreEnum);
+        ListFragment fragment = new ListFragment();
+        fragment.mGenreEnum = genreEnum;
+        return fragment;
+    }
+
+    /**
+     * get fragment for search
+     * @param genreEnum
+     * @param keyword
+     * @return
+     */
+    public static ListFragment getSearchInstance(GenreEnum genreEnum, String keyword) {
+        Assert.assertNotNull("keyword cannot be not for search", keyword);
+        Assert.assertTrue("genre enum must MuchoSearch or StreamSearch",
+                (genreEnum == GenreEnum.MochuSearch || genreEnum == GenreEnum.StreamSearch));
+
+        ListFragment fragment = new ListFragment();
+        fragment.mGenreEnum = genreEnum;
+        fragment.mKeyword = keyword;
+        return fragment;
+    }
 
     public final static String KEY_LIST_URL_BUILDER = "list_url_builder";
     public final static String KEY_HAS_FIRST_REFRESH = "has_first_refresh";
+    public final static String KEY_GENER_ENUM = "gener_enum";
 
     private static final long ANIMATE_TIME = 300L;
-    private static final int BACK_PRESSED_INTERVAL = 2000;
 
     private ContentLayout mContentLayout;
-    private SearchBar mSearchBar;
     private EasyRecyclerView mRecyclerView;
     private VideoListAdapter mAdapter;
     private VideoListHelper mHelper;
@@ -73,15 +92,10 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     private FloatingActionButton mSearchFab;
     private FabLayout mFabLayout;
     private AddDeleteDrawable mActionFabDrawable;
-    private DrawerArrowDrawable mLeftDrawable;
-    private AddDeleteDrawable mRightDrawable;
 
-    private SensorManager mSensorManager;
     private TuVideoPlayer.FullScreenListener mFullScreenListener;
 
     private boolean mHasFirstRefresh = false;
-    private VideoInfo mClickVideo;
-    private long mPressBackTime = 0;
 
     private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
         @Override
@@ -90,15 +104,17 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
     };
 
-
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         Context context = getContext();
         mClient = HStreamApplication.getHsClient(context);
-        mUrlBuilder = new ListUrlBuilder();
+        mUrlBuilder = new ListUrlBuilder(mGenreEnum);
+
+        if(!TextUtils.isEmpty(mKeyword)) {
+            mUrlBuilder.setKeyword(mKeyword);
+        }
 
         if (savedInstanceState != null) {
             onRestore(savedInstanceState);
@@ -110,6 +126,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     private void onRestore(Bundle savedInstanceState) {
         mHasFirstRefresh = savedInstanceState.getBoolean(KEY_HAS_FIRST_REFRESH);
         mUrlBuilder = savedInstanceState.getParcelable(KEY_LIST_URL_BUILDER);
+        mGenreEnum = savedInstanceState.getParcelable(KEY_GENER_ENUM);
     }
 
     @Override
@@ -118,6 +135,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
 
         outState.putBoolean(KEY_HAS_FIRST_REFRESH, mHasFirstRefresh);
         outState.putParcelable(KEY_LIST_URL_BUILDER, mUrlBuilder);
+        outState.putSerializable(KEY_GENER_ENUM, mGenreEnum);
     }
 
     @Override
@@ -134,7 +152,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_content_main, container, false);
+        View view = inflater.inflate(R.layout.fragment_list_tab, container, false);
         Resources resources = getContext().getResources();
 
         mHelper = new VideoListHelper();
@@ -163,16 +181,6 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         mFabLayout.getPrimaryFab().setImageDrawable(mActionFabDrawable);
 
         mSearchFab = (FloatingActionButton) view.findViewById(R.id.search_fab);
-        mSearchBar = (SearchBar) view.findViewById(R.id.search_tool_bar);
-
-        mLeftDrawable = new DrawerArrowDrawable(getContext());
-        mRightDrawable = new AddDeleteDrawable(getContext());
-        mSearchBar.setLeftDrawable(mLeftDrawable);
-        mSearchBar.setRightDrawable(mRightDrawable);
-        mSearchBar.setHelper(this);
-        mSearchBar.setTitle(getTitleForUrlBuilder());
-        setSearchBarHint(getContext(), mSearchBar);
-        mSearchBar.setOnStateChangeListener(this);
 
         if(!mHasFirstRefresh) {
             mHasFirstRefresh = true;
@@ -180,19 +188,6 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
 
         return view;
-    }
-
-    private void setSearchBarHint(Context context, SearchBar searchBar) {
-        Resources resources = context.getResources();
-        Drawable searchImage = DrawableManager.getDrawable(context, R.drawable.v_magnify_x24);
-        SpannableStringBuilder ssb = new SpannableStringBuilder("   ");
-        ssb.append(resources.getString(R.string.gallery_list_search_bar_hint_exhentai));
-        int textSize = (int) (searchBar.getEditTextTextSize() * 1.25);
-        if (searchImage != null) {
-            searchImage.setBounds(0, 0, textSize, textSize);
-            ssb.setSpan(new ImageSpan(searchImage), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        searchBar.setEditTextHint(ssb);
     }
 
     private void onGetVideoListSuccess(int taskId, VideoListParser.Result result) {
@@ -220,25 +215,6 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
 
         return true;
-    }
-
-    private void requiredDetailInfo() {
-        HsRequest request = new HsRequest();
-        request.setMethod(HsClient.METHOD_GET_VIDEO_DETAIL);
-        request.setCallback(new VideoListFragment.VideoDetailListener(this));
-        request.setArgs(mClickVideo.url);
-        mClient.execute(request);
-    }
-
-    private void onRequiredDetailSuccess(VideoSourceParser.Result result) {
-        VideoSourceInfo videoSourceInfo = result.mVideoSourceInfoList.get(0);
-        if(videoSourceInfo != null) {
-//            Intent intent = new Intent(getActivity(), VideoPlayActivity.class);
-//            intent.putExtra(VideoPlayActivity.KEY_VIDEO_TITLE, mClickVideo.title);
-//            intent.putExtra(VideoPlayActivity.KEY_VIDEO_THUMB, mClickVideo.thumb);
-//            intent.putExtra(VideoPlayActivity.KEY_VIDEO_URL, videoSourceInfo.videoUrl);
-//            startActivity(intent);
-        }
     }
 
     @Override
@@ -315,7 +291,6 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
 
         if(expanded) {
-            //阻止展开是测试菜单
             setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.LEFT);
             setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, Gravity.RIGHT);
             mActionFabDrawable.setDelete(ANIMATE_TIME);
@@ -326,74 +301,18 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
     }
 
-    @Override
-    public void onClickLeftIcon() {
-        if(null == mSearchBar) {
-            return;
-        }
-
-        if(mSearchBar.getState() == SearchBar.STATE_NORMAL) {
-            toggleDrawer(Gravity.LEFT);
-        } else {
-            mSearchBar.setState(SearchBar.STATE_NORMAL, true);
-        }
-    }
-
-    @Override
-    public void onClickRightIcon() {
-        if(mSearchBar.getState() == SearchBar.STATE_SEARCH) {
-            mSearchBar.setText("");
-        }
-    }
-
-    @Override
-    public void onClickTitle() {
-        mSearchBar.setState(SearchBar.STATE_SEARCH, true);
-    }
-
-    @Override
-    public void onApplySearch(String query) {
+    //execute search
+    public void applySearch(String query) {
         mUrlBuilder.reset();
         mUrlBuilder.setKeyword(query);
         mHelper.refresh();
-
-        mSearchBar.setTitle(getTitleForUrlBuilder());
-        mSearchBar.setState(SearchBar.STATE_NORMAL, true);
-    }
-
-    private String getTitleForUrlBuilder() {
-        String keyword = mUrlBuilder.getKeyword();
-
-        if(TextUtils.isEmpty(keyword)) {
-            return getResources().getString(R.string.app_name);
-        } else {
-            return keyword;
-        }
-    }
-
-    @Override
-    public void onStateChange(SearchBar searchBar, int newState, int oldState, boolean animation) {
-        if(mLeftDrawable == null || mRightDrawable == null) {
-            return;
-        }
-
-        switch (oldState) {
-            case SearchBar.STATE_NORMAL:
-                mLeftDrawable.setArrow(animation ? ANIMATE_TIME : 0);
-                mRightDrawable.setDelete(animation ? ANIMATE_TIME : 0);
-                break;
-            case SearchBar.STATE_SEARCH:
-                mLeftDrawable.setMenu(animation ? ANIMATE_TIME : 0);
-                mRightDrawable.setAdd(animation ? ANIMATE_TIME : 0);
-                break;
-        }
     }
 
     public class VideoListHelper extends ContentLayout.ContentHelper<VideoInfo> {
 
         @Override
         protected Context getContext() {
-            return VideoListFragment.this.getContext();
+            return ListFragment.this.getContext();
         }
 
         @Override
@@ -403,7 +322,7 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
             String url = mUrlBuilder.build();
             HsRequest request = new HsRequest();
             request.setMethod(HsClient.METHOD_GET_VIDEO_LIST);
-            request.setCallback(new VideoListListener(getContext(), VideoListFragment.this, taskId));
+            request.setCallback(new ListFragment.VideoListListener(getContext(), ListFragment.this, taskId));
             request.setArgs(url);
             mClient.execute(request);
         }
@@ -451,11 +370,11 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
     }
 
-    public class VideoListListener extends HsCallback<VideoListFragment, VideoListParser.Result> {
+    public class VideoListListener extends HsCallback<ListFragment, VideoListParser.Result> {
 
         private final int mTaskId;
 
-        public VideoListListener(Context context, VideoListFragment fragment, int taskId) {
+        public VideoListListener(Context context, ListFragment fragment, int taskId) {
             super(fragment);
             mTaskId = taskId;
         }
@@ -476,52 +395,6 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
         }
     }
 
-    public class VideoDetailListener extends HsCallback<VideoListFragment, VideoSourceParser.Result> {
-
-        public VideoDetailListener(VideoListFragment fragment) {
-            super(fragment);
-        }
-
-        @Override
-        public void onSuccess(VideoSourceParser.Result result) {
-            getFragment().onRequiredDetailSuccess(result);
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-
-        }
-
-        @Override
-        public void onCancel() {
-
-        }
-    }
-
-    private boolean checkDoubleClickExit() {
-        long time = System.currentTimeMillis();
-        if (time - mPressBackTime > BACK_PRESSED_INTERVAL) {
-            // It is the last scene
-            mPressBackTime = time;
-            showTip(R.string.press_twice_exit, LENGTH_SHORT);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if(TuVideoPlayer.backPress()) {
-            return;
-        }
-
-        boolean handle = checkDoubleClickExit();
-        if(!handle) {
-            finish();
-        }
-    }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -533,6 +406,5 @@ public class VideoListFragment extends SceneFragment implements EasyRecyclerView
             mClient = null;
         }
     }
-
 
 }

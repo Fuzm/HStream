@@ -22,7 +22,7 @@ import com.hippo.refreshlayout.RefreshLayout;
 import com.hippo.yorozuya.IntIdGenerator;
 import com.hippo.yorozuya.ResourcesUtils;
 import com.hippo.yorozuya.collect.IntList;
-import com.stream.hstream.GetText;
+import com.stream.util.GetText;
 import com.stream.hstream.R;
 import com.stream.util.DrawableManager;
 import com.stream.util.ExceptionUtils;

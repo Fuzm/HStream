@@ -3,6 +3,7 @@ package com.stream.client.parser;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.stream.client.data.VideoDetailInfo;
 import com.stream.client.data.VideoSourceInfo;
 import com.stream.hstream.Setting;
 import com.stream.util.JwpUtil;
@@ -24,6 +25,7 @@ public class VideoSourceParser {
     private static final String TAG = "VideoSourceParser";
 
     public static class Result {
+        public VideoDetailInfo mDetailInfo;
         public List<VideoSourceInfo> mVideoSourceInfoList;
     }
 
@@ -103,8 +105,13 @@ public class VideoSourceParser {
             Result result = new Result();
 
             try {
+                VideoDetailInfo detailInfo = parseDetail(doc);
+                if(detailInfo != null) {
+                    result.mDetailInfo = detailInfo;
+                }
+
                 List<VideoSourceInfo> list = new ArrayList<>();
-                VideoSourceInfo info = parseDetail(doc);
+                VideoSourceInfo info = parseSource(doc);
                 if(info != null) {
                     list.add(info);
                 }
@@ -123,7 +130,26 @@ public class VideoSourceParser {
             return result;
         }
 
-        public static VideoSourceInfo parseDetail(Element root) {
+        public static VideoDetailInfo parseDetail(Element root) {
+            VideoDetailInfo info = null;
+            try {
+                info = new VideoDetailInfo();
+                Elements h4s = root.getElementById("extras").getElementsByTag("h4");
+                for(Element element: h4s) {
+                    if(element.html().contains("Alternative")) {
+                        info.setAlternativeName(element.nextSibling().toString());
+                        break;
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return info;
+        }
+
+        public static VideoSourceInfo parseSource(Element root) {
             VideoSourceInfo info = null;
             try {
                 String videoUrl = null;

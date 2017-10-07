@@ -20,7 +20,6 @@ package com.stream.util;
 import android.support.annotation.NonNull;
 
 
-import com.stream.hstream.GetText;
 import com.stream.hstream.R;
 import com.stream.hstream.exception.EhException;
 import com.stream.network.StatusCodeException;

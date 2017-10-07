@@ -1,4 +1,4 @@
-package com.stream.widget;
+package com.stream.hstream.adapter;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -13,7 +13,6 @@ import com.stream.client.data.VideoInfo;
 import com.stream.dao.Favorite;
 import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
-import com.stream.util.LoadImageHelper;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 
 /**

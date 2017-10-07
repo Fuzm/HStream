@@ -1,4 +1,4 @@
-package com.stream.hstream;
+package com.stream.hstream.fragments;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -16,6 +16,9 @@ import com.stream.client.HsRequest;
 import com.stream.client.data.VideoSourceInfo;
 import com.stream.client.data.VideoInfo;
 import com.stream.client.parser.VideoSourceParser;
+import com.stream.hstream.HStreamApplication;
+import com.stream.client.HsCallback;
+import com.stream.hstream.R;
 import com.stream.scene.SceneFragment;
 import com.stream.widget.LoadImageView;
 

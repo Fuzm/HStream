@@ -70,8 +70,8 @@ public class DrawerArrowDrawable extends Drawable {
         Resources resources = context.getResources();
 
         mPaint.setAntiAlias(true);
-        mPaint.setColor(resources.getColor(R.color.primary_drawable_light));
-        mPaint.setColor(resources.getColor(R.color.primary_drawable_light));
+        mPaint.setColor(resources.getColor(R.color.primary_drawable_dark));
+        mPaint.setColor(resources.getColor(R.color.primary_drawable_dark));
         mSize = resources.getDimensionPixelSize(R.dimen.dad_drawable_size);
         // round this because having this floating may cause bad measurements
         mBarSize = Math.round(resources.getDimension(R.dimen.dad_bar_size));

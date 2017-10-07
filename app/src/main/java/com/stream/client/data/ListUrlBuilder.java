@@ -1,12 +1,10 @@
 package com.stream.client.data;
 
-import android.nfc.Tag;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.text.TextUtils;
-import android.util.Log;
 
 import com.stream.client.HsUrl;
+import com.stream.enums.GenreEnum;
 import com.stream.network.UrlBuilder;
 
 /**
@@ -21,8 +19,10 @@ public class ListUrlBuilder implements Cloneable, Parcelable{
 
     private int mPageIndex = 0;
     private String mKeyword = null;
+    private GenreEnum mGenreEnum;
 
-    public ListUrlBuilder() {
+    public ListUrlBuilder(GenreEnum genreEnum) {
+        mGenreEnum = genreEnum;
     }
 
     protected ListUrlBuilder(Parcel in) {
@@ -52,12 +52,11 @@ public class ListUrlBuilder implements Cloneable, Parcelable{
     }
 
     public String build() {
-        return new UrlBuilder(HsUrl.getPageUrl(mPageIndex, mKeyword)).build();
+        return new UrlBuilder(HsUrl.getPageUrl(mGenreEnum, mPageIndex, mKeyword)).build();
     }
 
     public String build(String url) {
-        UrlBuilder builder = new UrlBuilder(url);
-        return builder.build();
+        return new UrlBuilder(url).build();
     }
 
     @Override

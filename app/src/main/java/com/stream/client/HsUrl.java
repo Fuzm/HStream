@@ -2,9 +2,10 @@ package com.stream.client;
 
 import android.text.TextUtils;
 
+import com.stream.enums.GenreEnum;
 import com.stream.hstream.Setting;
 
-import org.w3c.dom.Text;
+import junit.framework.Assert;
 
 /**
  * Created by Fuzm on 2017/3/25 0025.
@@ -23,6 +24,7 @@ public class HsUrl {
     private static final String MUCHO_DOMAIN = "muchohentai.com";
     private static final String MUCHO_HOST = "https://muchohentai.com/";
     private static final String MUCHO_HOME = "https://muchohentai.com/genre/japanese/";
+    private static final String MUCHO_GENRE = "https://muchohentai.com/genre/";
     private static final String MUCHO_PAGE = "page/";
     private static final String MUCHO_SEARCH = "?s=";
 
@@ -45,7 +47,7 @@ public class HsUrl {
      * get host
      * @return
      */
-    public static String getHost() {
+    private static String getHost() {
         switch (Setting.getString(Setting.KEY_TYPE_WEB)) {
             case Setting.WEB_STREAM:
                 return STREAM_HOST;
@@ -60,7 +62,7 @@ public class HsUrl {
      * get home
      * @return
      */
-    public static String getHome() {
+    private static String getHome() {
         switch (Setting.getString(Setting.KEY_TYPE_WEB)) {
             case Setting.WEB_STREAM:
                 return STREAM_HOME;
@@ -75,20 +77,27 @@ public class HsUrl {
      * get page url
      * @return
      */
-    public static String getPageUrl(int pageIndex, String keyword) {
-
-        switch (Setting.getString(Setting.KEY_TYPE_WEB)) {
-            case Setting.WEB_STREAM:
-                return getStreamPageUrl(pageIndex, keyword);
-            case Setting.WEB_MUCHO:
-                return getMuchoPageUrl(pageIndex, keyword);
-            default:
-                return null;
+    public static String getPageUrl(GenreEnum genreEnum, int pageIndex, String keyword) {
+        if(genreEnum == GenreEnum.MochuSearch) {
+            Assert.assertNotNull("keyword can not bu null", keyword);
+            return getMuchoPageUrl(genreEnum, pageIndex, keyword);
+        } else if(genreEnum == GenreEnum.StreamSearch){
+            Assert.assertNotNull("keyword can not bu null", keyword);
+            return getStreamPageUrl(pageIndex, keyword);
+        } else {
+            switch (Setting.getString(Setting.KEY_TYPE_WEB)) {
+                case Setting.WEB_STREAM:
+                    return getStreamPageUrl(pageIndex, keyword);
+                case Setting.WEB_MUCHO:
+                    return getMuchoPageUrl(genreEnum, pageIndex, keyword);
+                default:
+                    return null;
+            }
         }
     }
 
     private static String getStreamPageUrl(int pageIndex, String keyword) {
-        String url = null;
+        String url = "";
         if(pageIndex > 0) {
             url = STREAM_PAGE + pageIndex;
         }
@@ -100,7 +109,7 @@ public class HsUrl {
         }
     }
 
-    private static String getMuchoPageUrl(int pageIndex, String keyword) {
+    private static String getMuchoPageUrl(GenreEnum genreEnum, int pageIndex, String keyword) {
         String url = "";
         if(pageIndex > 0) {
             url = MUCHO_PAGE + pageIndex;
@@ -109,8 +118,12 @@ public class HsUrl {
         if (!TextUtils.isEmpty(keyword)) {
             return MUCHO_HOST + url + MUCHO_SEARCH + keyword;
         } else {
-            return MUCHO_HOME + url;
+            return getMuchoGenreUrl(genreEnum) + url;
         }
+    }
+
+    private static String getMuchoGenreUrl(GenreEnum genreEnum) {
+        return MUCHO_GENRE + genreEnum.getValue() + "/";
     }
 
 }

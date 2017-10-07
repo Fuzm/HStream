@@ -32,7 +32,7 @@
 
         <FrameLayout
             android:id="@+id/source_info"
-            android:layout_width="150dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:gravity="start|center_vertical">

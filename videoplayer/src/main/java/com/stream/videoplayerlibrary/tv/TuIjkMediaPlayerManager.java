@@ -101,7 +101,6 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
 
             sTextureView = null;
             sSavedSurfaceTexture = null;
-            //sTuMediaPlayerManager.mUri = null;
         }
     }
 
@@ -130,14 +129,6 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
         mHeaders = headers;
     }
 
-    public String getVideoPath() {
-        return mUri;
-    }
-
-    public Map<String, String> getHeaders() {
-        return mHeaders;
-    }
-
     public void prepare() {
         releaseMediaPlayer();
         Message msg = new Message();
@@ -152,15 +143,27 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
     }
 
     public void start() {
-        mMediaPlayer.start();
+        if(mMediaPlayer != null)
+            mMediaPlayer.start();
     }
 
     public void pause() {
-        mMediaPlayer.pause();
+        if(mMediaPlayer != null && mMediaPlayer.isPlaying())
+            mMediaPlayer.pause();
     }
 
     public void seekTo(long posi) {
-        mMediaPlayer.seekTo(posi);
+        if(mMediaPlayer != null && mMediaPlayer.isPlaying()) {
+            mMediaPlayer.seekTo(posi);
+        }
+    }
+
+    public boolean isPlaying() {
+        if(mMediaPlayer != null) {
+            return  mMediaPlayer.isPlaying();
+        } else {
+            return false;
+        }
     }
 
     public long getCurrentPosition() {
@@ -201,12 +204,15 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
     private IMediaPlayer.OnInfoListener mInfoListener = new IMediaPlayer.OnInfoListener() {
         @Override
         public boolean onInfo(final IMediaPlayer iMediaPlayer, final int i, final int i1) {
-            mainThreadHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mVideoPlayer.onInfo(iMediaPlayer, i, i1);
-                }
-            });
+            if(mVideoPlayer != null) {
+                mainThreadHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mVideoPlayer.onInfo(iMediaPlayer, i, i1);
+                    }
+                });
+            }
+
             return false;
         }
     };
@@ -214,38 +220,44 @@ public class TuIjkMediaPlayerManager implements TextureView.SurfaceTextureListen
     private IMediaPlayer.OnBufferingUpdateListener mBufferingUpdateListener = new IMediaPlayer.OnBufferingUpdateListener() {
         @Override
         public void onBufferingUpdate(final IMediaPlayer iMediaPlayer, final int i) {
-            mainThreadHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if(mVideoPlayer != null) {
-                        mVideoPlayer.onBufferingUpdate(iMediaPlayer, i);
+            if(mVideoPlayer != null) {
+                mainThreadHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mVideoPlayer != null) {
+                            mVideoPlayer.onBufferingUpdate(iMediaPlayer, i);
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     };
 
     private IMediaPlayer.OnCompletionListener mCompletionListener = new IMediaPlayer.OnCompletionListener() {
         @Override
         public void onCompletion(final IMediaPlayer iMediaPlayer) {
-            mainThreadHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mVideoPlayer.onCompletion(iMediaPlayer);
-                }
-            });
+            if(mVideoPlayer != null) {
+                mainThreadHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mVideoPlayer.onCompletion(iMediaPlayer);
+                    }
+                });
+            }
         }
     };
 
     private IMediaPlayer.OnErrorListener mErrorListener = new IMediaPlayer.OnErrorListener() {
         @Override
         public boolean onError(final IMediaPlayer iMediaPlayer, final int i, final int i1) {
-            mainThreadHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mVideoPlayer.onError(iMediaPlayer, i, i1);
-                }
-            });
+            if(mVideoPlayer != null) {
+                mainThreadHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mVideoPlayer.onError(iMediaPlayer, i, i1);
+                    }
+                });
+            }
             return true;
         }
     };

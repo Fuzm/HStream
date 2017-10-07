@@ -2,14 +2,16 @@ package com.stream.hstream;
 
 import android.support.annotation.IdRes;
 import android.support.design.widget.NavigationView;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
 import com.hippo.drawerlayout.DrawerLayout;
+import com.stream.hstream.fragments.VideoDetailFragment;
+import com.stream.hstream.fragments.VideoDownloadFragment;
+import com.stream.hstream.fragments.VideoFavoriteFragment;
+import com.stream.hstream.fragments.VideoListFragment;
 import com.stream.scene.Announcer;
 import com.stream.scene.SceneFragment;
 import com.stream.scene.StageActivity;

@@ -24,6 +24,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.view.View;
 import android.widget.Toast;
 
@@ -64,6 +65,10 @@ public class SceneFragment extends Fragment {
         if (activity instanceof StageActivity) {
             ((StageActivity) activity).startScene(announcer);
         }
+    }
+
+    public FragmentManager getSupportFragmentManager() {
+        return getActivity().getSupportFragmentManager();
     }
 
     public void onNewArguments(@NonNull Bundle args) {}

@@ -1,59 +1,43 @@
-package com.stream.widget;
+package com.stream.hstream.adapter;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.media.MediaPlayer;
-import android.provider.Settings;
-import android.support.v7.widget.AppCompatButton;
 import android.support.v7.widget.AppCompatImageView;
 import android.support.v7.widget.AppCompatTextView;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.CheckedTextView;
 import android.widget.Spinner;
-import android.widget.Toast;
-import android.widget.VideoView;
 
 import com.danikula.videocache.HttpProxyCacheServer;
 import com.hippo.yorozuya.IntIdGenerator;
 import com.stream.client.HsClient;
 import com.stream.client.HsRequest;
 import com.stream.client.HsUrl;
+import com.stream.client.data.VideoDetailInfo;
 import com.stream.client.data.VideoSourceInfo;
-import com.stream.client.parser.VideoListParser;
 import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoUrlParser;
 import com.stream.dao.SourceInfo;
 import com.stream.enums.VideoFormat;
 import com.stream.hstream.HStreamApplication;
 import com.stream.hstream.HStreamDB;
-import com.stream.hstream.HsCallback;
 import com.stream.hstream.R;
 import com.stream.hstream.Setting;
-import com.stream.hstream.adapter.SimpleAdapter;
-import com.stream.hstream.adapter.SimpleHolder;
 import com.stream.util.LoadImageHelper;
 import com.stream.util.StreamUtils;
-import com.stream.util.StringUtils;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 
 import junit.framework.Assert;
 
 import java.util.ArrayList;
-import java.util.Currency;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import okhttp3.Call;
 
 /**
  * Created by Fuzm on 2017/3/24 0024.
@@ -170,7 +154,8 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
         if(sourceUrl != null) {
             mCurrentTaskId = mIdGenerator.nextId();
             mSourceRequest = new SourceRequest(token, title);
-            mSourceRequest.start(sourceUrl, mCurrentTaskId);
+            mSourceRequest.start(sourceUrl, mCurrentTaskId, forceRefresh);
+            mLoadMessage.setText(mContext.getResources().getString(R.string.source_loading));
         }
     }
 
@@ -193,8 +178,13 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
         }
     }
 
-    private void onRequiredDetailSuccess(List<VideoSourceInfo> result, int taskId) {
+    private void onRequiredDetailSuccess(VideoDetailInfo info, List<VideoSourceInfo> result, int taskId) {
         if(mCurrentTaskId == taskId) {
+
+            if(info != null) {
+                mVideoPlayer.setTitle(mVideoPlayer.getTitle() + "\n" + info.getAlternativeName());
+            }
+
             if(result != null && result.size() > 0) {
                 mData.clear();
                 mData.addAll(result);
@@ -265,6 +255,7 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
         private String mTitle;
         private boolean mForceRefresh = false;
 
+        private VideoDetailInfo detailInfo;
         private List<VideoSourceInfo> sourceInfoList = new ArrayList<>();
         private List<HsRequest> requestList = new ArrayList<>();
 
@@ -321,6 +312,10 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
                             }
                             break;
                         case Setting.WEB_MUCHO:
+                            if(result.mDetailInfo != null) {
+                                detailInfo = result.mDetailInfo;
+                            }
+
                             //mucho can find video url
                             for(VideoSourceInfo info: result.mVideoSourceInfoList) {
                                 info.url = sourceUrl;
@@ -434,7 +429,7 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
 
         private void notifySuccess() {
             //notify the success
-            onRequiredDetailSuccess(sourceInfoList, mTaskId);
+            onRequiredDetailSuccess(detailInfo, sourceInfoList, mTaskId);
         }
 
         private void notifyFail() {

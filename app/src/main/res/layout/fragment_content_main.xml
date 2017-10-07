@@ -1,76 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tl="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!--<com.stream.widget.SearchBar-->
+        <!--android:id="@+id/search_tool_bar"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"/>-->
+
     <LinearLayout
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="48dp"
+        android:background="@color/cyan_600"
+        android:fitsSystemWindows="true">
 
-        <com.stream.widget.SearchBar
-            android:id="@+id/search_tool_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-            <!--android:layout_marginLeft="@dimen/gallery_search_bar_margin_h"-->
-            <!--android:layout_marginRight="@dimen/gallery_search_bar_margin_h"-->
-            <!--android:layout_marginTop="@dimen/gallery_search_bar_margin_v"/>-->
+        <ImageView
+            android:id="@+id/right_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:layout_gravity="center_vertical"/>
 
-        <com.stream.widget.ContentLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/fragment_content_layout" />
+        <TextView
+            android:id="@+id/text_app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:text="@string/app_name"
+            android:textColor="@color/white_500"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <com.stream.widget.DrawableSearchEditText
+            android:hint="@string/gallery_list_search_bar_hint_hstream"
+            android:id="@+id/search_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:layout_margin="10dp"
+            android:textSize="@dimen/text_small"
+            android:padding="6dp"
+            android:editable="false"/>
 
     </LinearLayout>
 
-    <com.stream.widget.FabLayout
-        android:id="@+id/fab_layout"
+    <com.flyco.tablayout.CommonTabLayout
+        android:id="@+id/title_tab"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingRight="@dimen/corner_fab_margin"
-        android:paddingBottom="@dimen/corner_fab_margin">
+        android:layout_height="36dp"
+        android:background="@color/white_500"
+        tl:tl_indicator_color="@color/cyan_600"
+        tl:tl_textSelectColor="@color/cyan_600"
+        tl:tl_textUnselectColor="@color/black_500"
+        tl:tl_underline_color="@color/grey_300"
+        tl:tl_underline_height="1dp"
+        tl:tl_textsize="@dimen/text_little_small"/>
 
-        <android.support.design.widget.FloatingActionButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@drawable/v_go_to_dark_x24"
-            app:backgroundTint="?attr/colorAccent"
-            style="@style/Widget.Design.FloatingActionButton.Mini"/>
-
-        <android.support.design.widget.FloatingActionButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@drawable/v_refresh_dark_x24"
-            app:backgroundTint="?attr/colorAccent"
-            style="@style/Widget.Design.FloatingActionButton.Mini"/>
-
-        <android.support.design.widget.FloatingActionButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:backgroundTint="?attr/colorPrimary"
-            style="@style/Widget.Design.FloatingActionButton"/>
-    </com.stream.widget.FabLayout>
-
-    <com.stream.widget.FabLayout
-        xmlns:app="http://schemas.android.com/apk/res-auto"
+    <android.support.v4.view.ViewPager
+        android:id="@+id/tab_page"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingRight="@dimen/corner_fab_margin"
-        android:paddingBottom="@dimen/corner_fab_margin">
+        android:layout_height="match_parent"/>
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/search_fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@drawable/v_magnify_dark_x24"
-            android:visibility="invisible"
-            android:scaleX="0"
-            android:scaleY="0"
-            style="@style/Widget.Design.FloatingActionButton"/>
+</LinearLayout>
 
-    </com.stream.widget.FabLayout>
 
-</FrameLayout>
 

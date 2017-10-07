@@ -15,19 +15,16 @@ import android.support.v4.app.NotificationCompat;
 
 import com.hippo.yorozuya.FileUtils;
 import com.hippo.yorozuya.SimpleHandler;
-import com.hippo.yorozuya.collect.SparseJBArray;
-import com.hippo.yorozuya.collect.SparseJLArray;
 import com.stream.client.data.VideoInfo;
 import com.stream.dao.DownloadInfo;
 import com.stream.hstream.HStreamApplication;
 import com.stream.hstream.MainActivity;
 import com.stream.hstream.R;
-import com.stream.hstream.VideoDownloadFragment;
+import com.stream.hstream.fragments.VideoDownloadFragment;
 import com.stream.scene.StageActivity;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.List;
 
 /**
  * Created by Fuzm on 2017/5/3 0003.

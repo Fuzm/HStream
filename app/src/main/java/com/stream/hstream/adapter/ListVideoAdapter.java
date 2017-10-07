@@ -1,4 +1,4 @@
-package com.stream.hstream;
+package com.stream.hstream.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
+import com.stream.hstream.R;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 
 import java.util.List;

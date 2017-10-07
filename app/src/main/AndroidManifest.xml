@@ -35,6 +35,9 @@
                   android:configChanges="orientation|screenSize|keyboardHidden"
                   android:screenOrientation="landscape"></activity>
 
+        <activity android:name=".VideoSearchActivity"
+                  android:theme="@style/AppTheme.NoActionBar"/>
+
         <service android:name="com.stream.download.DownloadService" />
     </application>
 
