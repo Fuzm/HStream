@@ -9,11 +9,13 @@ import de.greenrobot.dao.AbstractDaoSession;
 import de.greenrobot.dao.identityscope.IdentityScopeType;
 import de.greenrobot.dao.internal.DaoConfig;
 
+import com.stream.dao.DetailInfo;
 import com.stream.dao.SourceInfo;
 import com.stream.dao.DownloadInfo;
 import com.stream.dao.Favorite;
 import com.stream.dao.Suggestion;
 
+import com.stream.dao.DetailDao;
 import com.stream.dao.SourceDao;
 import com.stream.dao.DownloadDao;
 import com.stream.dao.FavoriteDao;
@@ -28,11 +30,13 @@ import com.stream.dao.SuggestionDao;
  */
 public class DaoSession extends AbstractDaoSession {
 
+    private final DaoConfig detailDaoConfig;
     private final DaoConfig sourceDaoConfig;
     private final DaoConfig downloadDaoConfig;
     private final DaoConfig favoriteDaoConfig;
     private final DaoConfig suggestionDaoConfig;
 
+    private final DetailDao detailDao;
     private final SourceDao sourceDao;
     private final DownloadDao downloadDao;
     private final FavoriteDao favoriteDao;
@@ -41,6 +45,9 @@ public class DaoSession extends AbstractDaoSession {
     public DaoSession(SQLiteDatabase db, IdentityScopeType type, Map<Class<? extends AbstractDao<?, ?>>, DaoConfig>
             daoConfigMap) {
         super(db);
+
+        detailDaoConfig = daoConfigMap.get(DetailDao.class).clone();
+        detailDaoConfig.initIdentityScope(type);
 
         sourceDaoConfig = daoConfigMap.get(SourceDao.class).clone();
         sourceDaoConfig.initIdentityScope(type);
@@ -54,11 +61,13 @@ public class DaoSession extends AbstractDaoSession {
         suggestionDaoConfig = daoConfigMap.get(SuggestionDao.class).clone();
         suggestionDaoConfig.initIdentityScope(type);
 
+        detailDao = new DetailDao(detailDaoConfig, this);
         sourceDao = new SourceDao(sourceDaoConfig, this);
         downloadDao = new DownloadDao(downloadDaoConfig, this);
         favoriteDao = new FavoriteDao(favoriteDaoConfig, this);
         suggestionDao = new SuggestionDao(suggestionDaoConfig, this);
 
+        registerDao(DetailInfo.class, detailDao);
         registerDao(SourceInfo.class, sourceDao);
         registerDao(DownloadInfo.class, downloadDao);
         registerDao(Favorite.class, favoriteDao);
@@ -66,10 +75,15 @@ public class DaoSession extends AbstractDaoSession {
     }
     
     public void clear() {
+        detailDaoConfig.getIdentityScope().clear();
         sourceDaoConfig.getIdentityScope().clear();
         downloadDaoConfig.getIdentityScope().clear();
         favoriteDaoConfig.getIdentityScope().clear();
         suggestionDaoConfig.getIdentityScope().clear();
+    }
+
+    public DetailDao getDetailDao() {
+        return detailDao;
     }
 
     public SourceDao getSourceDao() {
