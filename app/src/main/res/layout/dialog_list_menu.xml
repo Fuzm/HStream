@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_drawable_dark">
+
+    <TextView
+        android:id="@+id/download_button"
+        android:text="@string/list_menu_download"
+        android:layout_width="match_parent"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:padding="10dp"
+        android:gravity="center"
+        android:textSize="@dimen/text_large"
+        android:textStyle="bold"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/primary_drawable_light"/>
+
+    <TextView
+        android:id="@+id/subtitle_button"
+        android:text="@string/list_menu_subtitle"
+        android:layout_width="match_parent"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:padding="10dp"
+        android:gravity="center"
+        android:textSize="@dimen/text_large"
+        android:textStyle="bold"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/primary_drawable_light"/>
+
+    <TextView
+        android:id="@+id/refresh_button"
+        android:text="@string/list_menu_refresh"
+        android:layout_width="match_parent"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:padding="10dp"
+        android:gravity="center"
+        android:textSize="@dimen/text_large"
+        android:textStyle="bold"/>
+
+</LinearLayout>

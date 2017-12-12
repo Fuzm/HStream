@@ -9,6 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,11 +22,15 @@ import android.widget.Toast;
 
 import com.daimajia.swipe.SwipeLayout;
 import com.hippo.yorozuya.FileUtils;
+import com.stream.dao.DetailInfo;
 import com.stream.dao.DownloadInfo;
+import com.stream.download.DownloadDetail;
 import com.stream.download.DownloadManager;
 import com.stream.download.DownloadService;
 import com.stream.download.DownloadUtil;
+import com.stream.download.SubtitleDownloader;
 import com.stream.hstream.HStreamApplication;
+import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
 import com.stream.hstream.VideoPalyActivity;
 import com.stream.scene.ToolBarFragment;
@@ -43,7 +48,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
 
     private RecyclerView mRecyclerView;
     private DownloadListAdapter mAdapter;
-    private List<DownloadInfo> mData;
+    private List<DownloadDetail> mData;
     private DownloadManager mDownloadManager;
     private ViewTransition mViewTransition;
 
@@ -126,7 +131,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
     }
 
     @Override
-    public void onAdd(DownloadInfo info) {
+    public void onAdd(DownloadDetail info) {
         int index = mData.indexOf(info);
         if(index != -1) {
             mAdapter.notifyItemChanged(index);
@@ -136,7 +141,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
     }
 
     @Override
-    public void onUpdate(DownloadInfo info) {
+    public void onUpdate(DownloadDetail info) {
         int index = mData.indexOf(info);
         if(index != -1) {
             mAdapter.notifyItemChanged(index);
@@ -149,7 +154,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
     }
 
     @Override
-    public void onCancel(DownloadInfo info) {
+    public void onCancel(DownloadDetail info) {
         int index = mData.indexOf(info);
         if(index != -1) {
             mAdapter.notifyItemChanged(index);
@@ -157,7 +162,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
     }
 
     @Override
-    public void onRemove(DownloadInfo info, int position) {
+    public void onRemove(DownloadDetail info, int position) {
         if(position != -1) {
             mAdapter.notifyItemRemoved(position);
         }
@@ -165,7 +170,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         updateView();
     }
 
-    private void bindForState(DownloadHolder holder, DownloadInfo info) {
+    private void bindForState(DownloadHolder holder, DownloadDetail info) {
         Resources resources = getResources();
         if (null == resources) {
             return;
@@ -191,7 +196,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         }
     }
 
-    private void bindState(DownloadHolder holder, DownloadInfo info, String state) {
+    private void bindState(DownloadHolder holder, DownloadDetail info, String state) {
         holder.mProgressBar.setVisibility(View.GONE);
         //holder.mSpeed.setVisibility(View.GONE);
         //holder.mTotalText.setVisibility(View.VISIBLE);
@@ -208,7 +213,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         //holder.mTotalText.setText(FileUtils.humanReadableByteCount(info.getTotal(), true));
     }
 
-    private void bindProgress(DownloadHolder holder, DownloadInfo info) {
+    private void bindProgress(DownloadHolder holder, DownloadDetail info) {
         holder.mProgressBar.setVisibility(View.VISIBLE);
         //holder.mSpeed.setVisibility(View.VISIBLE);
         //holder.mTotalText.setVisibility(View.GONE);
@@ -261,7 +266,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
 
         @Override
         public void onBindViewHolder(VideoDownloadFragment.DownloadHolder holder, int position) {
-            DownloadInfo info = mData.get(position);
+            DownloadDetail info = mData.get(position);
             holder.mDownloadThumb.load(info.getToken(), info.getThumb());
             holder.mDownloadTitle.setText(info.getTitle());
             bindForState(holder, info);
@@ -280,6 +285,7 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
         public ImageView mStop;
         public Button mPlay;
         public Button mDelete;
+        public Button mSubtitleDownload;
         public SwipeLayout mSwipeLayout;
 
         public DownloadHolder(View itemView) {
@@ -295,12 +301,14 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
             mStop = (ImageView) itemView.findViewById(R.id.stop);
             mPlay = (Button) itemView.findViewById(R.id.play);
             mDelete = (Button) itemView.findViewById(R.id.delete);
+            mSubtitleDownload = (Button) itemView.findViewById(R.id.subtitle_download);
             mSwipeLayout = (SwipeLayout) itemView.findViewById(R.id.swipe_layout);
 
             mStart.setOnClickListener(this);
             mStop.setOnClickListener(this);
             mPlay.setOnClickListener(this);
             mDelete.setOnClickListener(this);
+            mSubtitleDownload.setOnClickListener(this);
             mProgressBar.setMax(100);
 
             //itemView.setOnTouchListener(this);
@@ -324,17 +332,22 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
                 getActivity().startService(intent);
             } else if(v.getId() == R.id.stop) {
                 if(mDownloadManager != null) {
-                    mDownloadManager.stopDownload(mData.get(index));
+                    mDownloadManager.stopDownload(mData.get(index).getToken());
                 }
             } else if(v.getId() == R.id.play) {
-                DownloadInfo info = mData.get(index);
+                DownloadDetail info = mData.get(index);
                 if(mDownloadManager != null) {
                     String filePath = DownloadUtil.getFilePath(info.getTitle());
                     if(filePath != null && filePath.length() > 0) {
-                        Intent intent = new Intent(getContext(), VideoPalyActivity.class);
-                        intent.putExtra(VideoPalyActivity.KEY_TITLE, info.getTitle());
-                        intent.putExtra(VideoPalyActivity.KEY_URL, filePath);
-                        getActivity().startActivity(intent);
+                        DetailInfo detailInfo = HStreamDB.queryDetailInfo(info.getToken());
+                        if(detailInfo != null) {
+                            getActivity().startActivity(
+                                    VideoPalyActivity.newIntent(getContext(), info.getTitle(), filePath, detailInfo.getSubtitle_path()));
+                        } else {
+                            getActivity().startActivity(
+                                    VideoPalyActivity.newIntent(getContext(), info.getTitle(), filePath));
+                        }
+
                     } else {
                         showTip("无法获取路径", Toast.LENGTH_SHORT);
                     }
@@ -343,9 +356,31 @@ public class VideoDownloadFragment extends ToolBarFragment implements DownloadMa
                 }
             } else if(v.getId() == R.id.delete) {
                 //mSwipeLayout.close();
-                DownloadInfo info = mData.get(index);
+                DownloadDetail info = mData.get(index);
                 if(mDownloadManager != null) {
                     mDownloadManager.deleteDownload(info);
+                }
+            } else if(v.getId() == R.id.subtitle_download) {
+                DownloadDetail info = mData.get(index);
+                //download subtitle
+                DetailInfo detailInfo = HStreamDB.queryDetailInfo(info.getToken());
+                if(detailInfo != null && !TextUtils.isEmpty(detailInfo.getSubtitle_path())) {
+                    SubtitleDownloader.instance().start(detailInfo.getSubtitle_path(), info.getTitle(),
+                            new SubtitleDownloader.SubtitleDownloadListener() {
+                                @Override
+                                public void onSuccess(String subtitle, String path) {
+                                    showTip("subtitle download success", Toast.LENGTH_SHORT);
+                                }
+
+                                @Override
+                                public void onFail(Exception e) {
+                                    showTip("subtitle download failure", Toast.LENGTH_SHORT);
+                                }
+                            });
+
+                    showTip("subtitle" + info.getTitle() + " downloading", Toast.LENGTH_SHORT);
+                } else {
+                    showTip("not found subtitle", Toast.LENGTH_SHORT);
                 }
             }
         }

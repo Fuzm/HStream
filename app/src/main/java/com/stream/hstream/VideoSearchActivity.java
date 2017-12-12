@@ -1,5 +1,7 @@
 package com.stream.hstream;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
@@ -7,29 +9,36 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.stream.enums.GenreEnum;
 import com.stream.hstream.fragments.tab.ListFragment;
 import com.stream.hstream.fragments.tab.TabFragment;
 import com.stream.util.AppHelper;
+import com.stream.widget.DrawableSearchBar;
 import com.stream.widget.DrawableSearchEditText;
 
 /**
  * Created by Seven-one on 2017/9/28.
  */
 
-public class VideoSearchActivity extends AppCompatActivity implements View.OnClickListener, TextView.OnEditorActionListener{
+public class VideoSearchActivity extends AppCompatActivity {
 
     private static final String FRAGMENT_SEARCH_TAG = "search_tag";
 
-    private ImageView mSearchBack;
-    private DrawableSearchEditText mSearchEditText;
-    private TextView mSearchAction;
+    private DrawableSearchBar mSearchBar;
+
+    public static Intent newIntent(Context context) {
+        return new Intent(context, VideoSearchActivity.class);
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -38,59 +47,31 @@ public class VideoSearchActivity extends AppCompatActivity implements View.OnCli
         setContentView(R.layout.activity_search_main);
 
         //init component
-        mSearchBack = (ImageView) findViewById(R.id.search_back);
-        mSearchEditText = (DrawableSearchEditText) findViewById(R.id.search_edit_text);
-        mSearchAction = (TextView) findViewById(R.id.search_action);
-
-        //registe click event
-        mSearchBack.setOnClickListener(this);
-        mSearchAction.setOnClickListener(this);
-        mSearchEditText.setOnEditorActionListener(this);
-        mSearchEditText.addTextChangedListener(new TextWatcher() {
+        mSearchBar = (DrawableSearchBar) findViewById(R.id.search_bar);
+        mSearchBar.setHelper(new DrawableSearchBar.Helper() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
+            public void onClickLeftIcon() {
+                finish();
             }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
+            public void onClickEditText() {
+                mSearchBar.setState(DrawableSearchBar.STATE_SEARCH);
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-                setSearchActionState(s.toString());
+            public void onApplySearch(String query) {
+                applySearch(query);
             }
         });
 
-        //other
-        setSearchActionState(null);
+        mSearchBar.setState(DrawableSearchBar.STATE_SEARCH, true);
 
-        mSearchEditText.requestFocus();
-        AppHelper.showKeyBord(mSearchEditText, this);
+        Log.d("VideoSearchActivity", "Search Bar Measured Height: " + mSearchBar.getMeasuredHeight());
+        Log.d("VideoSearchActivity", "Search Bar Height: " + mSearchBar.getMeasuredHeight());
     }
 
-    private void setSearchActionState(String query) {
-        if(!TextUtils.isEmpty(query)) {
-            mSearchAction.setClickable(true);
-            mSearchAction.setTextColor(getResources().getColor(R.color.cyan_600));
-        } else {
-            mSearchAction.setClickable(false);
-            mSearchAction.setTextColor(getResources().getColor(R.color.grey_500));
-        }
-    }
-
-    @Override
-    public void onClick(View v) {
-        if (v.getId() == R.id.search_back) {
-            onBackPressed();
-        } else if (v.getId() == R.id.search_action) {
-            applySearch();
-        }
-    }
-
-    private void applySearch() {
-        String query = mSearchEditText.getText().toString();
+    private void applySearch(String query) {
         if (!TextUtils.isEmpty(query)) {
             TabFragment fragment = (TabFragment) getSupportFragmentManager().findFragmentByTag(FRAGMENT_SEARCH_TAG);
             if (fragment == null) {
@@ -102,18 +83,17 @@ public class VideoSearchActivity extends AppCompatActivity implements View.OnCli
                 fragment.applySearch(query);
             }
 
-            AppHelper.hideKeyBord(mSearchEditText, this);
+            mSearchBar.setState(DrawableSearchBar.STATE_NORMAL);
         }
     }
 
     @Override
-    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        if(v == mSearchEditText) {
-            if(actionId == EditorInfo.IME_ACTION_SEARCH) {
-                applySearch();
-                return true;
-            }
+    public void onBackPressed() {
+        int state = mSearchBar.getState();
+        if(state != DrawableSearchBar.STATE_NORMAL) {
+            mSearchBar.setState(DrawableSearchBar.STATE_NORMAL);
+        } else {
+            super.onBackPressed();
         }
-        return false;
     }
 }

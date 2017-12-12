@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 
 /**
@@ -168,6 +169,21 @@ public class VideoUtils {
         drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
         drawable.draw(canvas);
         return bitmap;
+    }
+
+    public static String getJavaEncode(String filePath) {
+        BytesEncodingDetect s = new BytesEncodingDetect();
+        return BytesEncodingDetect.javaname[s.detectEncoding(new File(filePath))];
+    }
+
+    public static String getJavaEncode(byte[] rawtext) {
+        BytesEncodingDetect s = new BytesEncodingDetect();
+        return BytesEncodingDetect.javaname[s.detectEncoding(rawtext)];
+    }
+
+    public static String getJavaEncode(File file) {
+        BytesEncodingDetect s = new BytesEncodingDetect();
+        return BytesEncodingDetect.javaname[s.detectEncoding(file)];
     }
 
 }

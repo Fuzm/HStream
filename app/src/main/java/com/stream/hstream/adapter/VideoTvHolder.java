@@ -1,16 +1,33 @@
 package com.stream.hstream.adapter;
 
 import android.content.Context;
+import android.os.Handler;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.AppCompatImageView;
 import android.support.v7.widget.AppCompatTextView;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.CheckedTextView;
+import android.widget.ListView;
+import android.widget.PopupMenu;
 import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.danikula.videocache.HttpProxyCacheServer;
 import com.hippo.yorozuya.IntIdGenerator;
@@ -18,21 +35,34 @@ import com.stream.client.HsClient;
 import com.stream.client.HsRequest;
 import com.stream.client.HsUrl;
 import com.stream.client.data.VideoDetailInfo;
+import com.stream.client.data.VideoInfo;
 import com.stream.client.data.VideoSourceInfo;
+import com.stream.client.parser.Parser;
 import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoUrlParser;
+import com.stream.dao.DetailInfo;
+import com.stream.dao.Favorite;
 import com.stream.dao.SourceInfo;
+import com.stream.download.DownloadDetail;
+import com.stream.download.DownloadService;
+import com.stream.download.DownloadUtil;
+import com.stream.download.SubtitleDownloader;
 import com.stream.enums.VideoFormat;
 import com.stream.hstream.HStreamApplication;
 import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
 import com.stream.hstream.Setting;
+import com.stream.util.HSAssetManager;
 import com.stream.util.LoadImageHelper;
 import com.stream.util.StreamUtils;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
+import com.stream.videoplayerlibrary.tv.VideoPlayer;
+import com.stream.widget.DrawableSearchEditText;
+import com.stream.widget.SearchEditText;
 
 import junit.framework.Assert;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +74,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class VideoTvHolder extends RecyclerView.ViewHolder{
+
+    private static final String TAG = VideoTvHolder.class.getSimpleName();
+
+    private AlertDialog mSubtitleDialog;
+    private DrawableSearchEditText mEditText;
 
     private HsClient mClient;
     private Context mContext;
@@ -57,18 +92,19 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
     private LoadImageHelper mImageHelper;
     private IntIdGenerator mIdGenerator = new IntIdGenerator();
     private int mCurrentTaskId = -1;
-    //private String mSourceUrl = null;
     private int mCurrentSourceIndex = 0;
+    private VideoInfo mVideoInfo;
+    private VideoDetailInfo mVideoDetailInfo;
 
     private List<VideoSourceInfo> mData = new ArrayList<>();
     private SourceAdapter mAdapter;
     private Spinner mSpinner;
     private AppCompatTextView mLoadMessage;
+    private AppCompatTextView mOfferingDate;
+    private Button mMenuButton;
 
-    public TuVideoPlayer mVideoPlayer;
-    public AppCompatImageView mDownloadButton;
-    public AppCompatImageView mRequireButton;
-    public AppCompatTextView mMessageText;
+    private TuVideoPlayer mVideoPlayer;
+    private Handler mHandler;
 
     public VideoTvHolder(Context context, View itemView) {
         super(itemView);
@@ -76,20 +112,29 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
 
         mClient = HStreamApplication.getHsClient(context);
         mVideoPlayer = (TuVideoPlayer) itemView.findViewById(R.id.list_video_player);
-        mDownloadButton = (AppCompatImageView) itemView.findViewById(R.id.download_button);
-        mRequireButton = (AppCompatImageView) itemView.findViewById(R.id.refresh_button);
-        mMessageText = (AppCompatTextView) itemView.findViewById(R.id.message_text);
 
         mLoadMessage = (AppCompatTextView) itemView.findViewById(R.id.load_message);
+        mOfferingDate = (AppCompatTextView) itemView.findViewById(R.id.offering_date);
         mSpinner = (Spinner) itemView.findViewById(R.id.source_spinner);
         mAdapter = new SourceAdapter(mContext);
         mSpinner.setAdapter(mAdapter);
+
+        mMenuButton = (Button) itemView.findViewById(R.id.menu_button);
+
+        mHandler = new Handler();
+    }
+
+    /**
+     * registe listener
+     */
+    private void registeListener() {
+        //set spinner listener
         mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view,int pos, long id) {
                 mCurrentSourceIndex = pos;
                 mSpinner.setSelection(pos, true);
-                startVideo();
+                startVideo(mVideoInfo.token);
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
@@ -97,13 +142,264 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
             }
         });
 
+        //register favorite listener
+        mVideoPlayer.setOnFavoriteListener(new TuVideoPlayer.OnFavoriteListener() {
+            @Override
+            public boolean isFavorited() {
+                return HStreamDB.existeFavorite(mVideoInfo.token);
+            }
+
+            @Override
+            public void onFavorite(String url) {
+                if(!HStreamDB.existeFavorite(mVideoInfo.token)) {
+                    Favorite favorite = new Favorite();
+                    favorite.setToken(mVideoInfo.token);
+                    favorite.setTitle(mVideoInfo.title);
+                    favorite.setThumb(mVideoInfo.thumb);
+                    favorite.setSource_url(mVideoInfo.url);
+                    favorite.setVideo_url(url);
+                    favorite.setTime(System.currentTimeMillis());
+
+                    HStreamDB.putFavorite(favorite);
+                } else {
+                    HStreamDB.removeFavorite(mVideoInfo.token);
+                }
+            }
+        });
+
+        mMenuButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openMenuDialog();
+            }
+        });
     }
 
+    /**
+     * open menu dialog
+     */
+    private void openMenuDialog() {
+        View view = LayoutInflater.from(mContext).inflate(R.layout.dialog_list_menu, null);
+
+        TextView downloadTextView = (TextView) view.findViewById(R.id.download_button);
+        TextView requireTextView = (TextView) view.findViewById(R.id.refresh_button);
+        TextView subtitleView = (TextView) view.findViewById(R.id.subtitle_button);
+
+        //build dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(mContext, R.style.BottomDialog);
+        builder.setView(view);
+        final AlertDialog dialog = builder.create();
+
+        Window dialogWin = dialog.getWindow();
+        dialogWin.setGravity(Gravity.BOTTOM);
+        WindowManager.LayoutParams lp = dialogWin.getAttributes();
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+        lp.width = WindowManager.LayoutParams.WRAP_CONTENT;
+        dialogWin.setAttributes(lp);
+
+        dialog.show();
+
+        //set required button listener
+        requireTextView.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                dialog.hide();
+                //force refresh video source data
+                requiredSourceInfo(mVideoInfo, true);
+            }
+        });
+
+        //set download listener
+        downloadTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.hide();
+
+                if(mVideoInfo == null) {
+                    showTip("Not find video info");
+                    return;
+                }
+
+                VideoSourceInfo videoSourceInfo = mData.get(mCurrentSourceIndex);
+                if(videoSourceInfo == null) {
+                    showTip("Not find video source can download");
+                    return;
+                }
+
+                if(TextUtils.isEmpty(videoSourceInfo.videoUrl)) {
+                    showTip("Not find video url, please wait the video source load");
+                    return;
+                }
+
+                if(!DownloadUtil.checkUrlFormat(videoSourceInfo.videoUrl)) {
+                    showTip("Not support the video format to download, please change the video source");
+                    return;
+                }
+
+                DownloadDetail detail = new DownloadDetail();
+                detail.setToken(mVideoInfo.token);
+                detail.setTitle(mVideoInfo.title);
+                detail.setThumb(mVideoInfo.thumb);
+                detail.setDownloadUrl(videoSourceInfo.videoUrl);
+                detail.setAlternativeName(mVideoDetailInfo.getAlternativeName());
+                mContext.startService(DownloadService.newIntent(mContext, detail));
+
+                //download subtitle
+                DetailInfo detailInfo = HStreamDB.queryDetailInfo(mVideoInfo.token);
+                if(detailInfo != null && !TextUtils.isEmpty(detailInfo.getSubtitle_path())) {
+                    SubtitleDownloader.instance().start(detailInfo.getSubtitle_path(), mVideoInfo.title);
+                }
+            }
+        });
+
+        //open dialog for search subtitle
+        subtitleView.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                dialog.hide();
+                openSubtitleDialog();
+            }
+        });
+    }
+
+    /**
+     * open subtitile search dialog
+     */
+    private void openSubtitleDialog() {
+        if(mSubtitleDialog == null) {
+            View view = LayoutInflater.from(mContext).inflate(R.layout.dialog_subtitle_search, null);
+            mEditText = (DrawableSearchEditText) view.findViewById(R.id.subtitle_edit_text);
+            ListView subtitleList = (ListView) view.findViewById(R.id.subtitle_search_list);
+
+            //set default search text
+            String nativeName = getAlternativeName();
+            if(!TextUtils.isEmpty(nativeName)) {
+                mEditText.setText(nativeName);
+            }
+
+            //set adapter and item click listener
+            List dataList = HSAssetManager.querySubtitle(nativeName);
+            final ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, R.layout.item_search_subtitle_list, dataList);
+            subtitleList.setAdapter(adapter);
+
+            //build dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+            builder.setView(view);
+            mSubtitleDialog = builder.create();
+
+            //search
+            mEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                @Override
+                public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                    if(!TextUtils.isEmpty(mEditText.getText().toString())) {
+                        List subtitleList = HSAssetManager.querySubtitle(mEditText.getText().toString());
+                        adapter.clear();
+                        adapter.addAll(subtitleList);
+                        adapter.notifyDataSetChanged();
+                        return true;
+                    }
+                    return false;
+                }
+            });
+
+            //set list item click lister
+            subtitleList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    String subtitle = adapter.getItem(position);
+                    loadSubtitle(subtitle);
+                    mSubtitleDialog.hide();
+                }
+            });
+
+        } else {
+            String text = mEditText.getText().toString();
+
+            //set default search text
+            String nativeName = getAlternativeName();
+            if(!TextUtils.isEmpty(nativeName) && !nativeName.contains(text)) {
+                mEditText.setText(nativeName);
+                mEditText.onEditorAction(EditorInfo.IME_ACTION_SEARCH);
+            }
+        }
+
+        mSubtitleDialog.show();
+    }
+
+    /**
+     * load subtitle
+     * @param subtitle
+     */
+    private void loadSubtitle(String subtitle) {
+        if(mVideoPlayer.isPlaying()) {
+            mVideoPlayer.loadSubtitleFromAssets(HSAssetManager.getSubtitleDir() + subtitle);
+        }
+
+        //save detail info for subtitle
+        DetailInfo detailInfo = HStreamDB.queryDetailInfo(mVideoInfo.token);
+        if(detailInfo != null && !TextUtils.isEmpty(detailInfo.getToken())) {
+            detailInfo.setSubtitle_path(subtitle);
+            HStreamDB.putDetailInfo(detailInfo);
+        }
+    }
+
+    /**
+     * show tip
+     * @param tip
+     */
+    private void showTip(String tip) {
+        Toast.makeText(mContext, tip, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * init holder
+     * @param videoInfo
+     */
+    public void init(VideoInfo videoInfo) {
+        //prevent for change data
+        mVideoInfo = new VideoInfo(videoInfo);
+
+        //set thumb
+        if(mImageHelper == null) {
+            mImageHelper = LoadImageHelper.with(mContext);
+        }
+        mImageHelper.load(mVideoInfo.token, mVideoInfo.thumb)
+                    .into(mVideoPlayer.getThumb());
+
+        //set player
+        mVideoPlayer.setUp(null, mVideoInfo.title, TuVideoPlayer.MODE_NORMAL_SCREEN);
+
+        //registe listener
+        registeListener();
+    }
+
+    /**
+     * get alternative name
+     * @return
+     */
+    private String getAlternativeName() {
+        String title = mVideoPlayer.getTitle().toString();
+        if(!TextUtils.isEmpty(title)) {
+            String[] titleArr = title.split("\n");
+            if(titleArr.length > 1) {
+                return titleArr[1];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * clear holder
+     */
     public void clear() {
-        mVideoPlayer.release();
+        //mVideoPlayer.release();
         mVideoPlayer.setThumb(null);
-        mMessageText.setText(null);
         mCurrentTaskId = -1;
+        mVideoInfo = null;
+        mVideoDetailInfo = null;
 
         //clear image load task for out date
         if(mImageHelper != null) {
@@ -119,47 +415,61 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
         if(mData.size() != 0) {
             mData.clear();
             mAdapter.notifyDataSetChanged();
+            mSpinner.setSelection(0);
         }
 
-        mLoadMessage.setText(mContext.getResources().getString(R.string.source_loading));
-        mSpinner.setVisibility(View.GONE);
-        mLoadMessage.setVisibility(View.VISIBLE);
+        loadMessageShow(true, R.string.source_loading);
+        mOfferingDate.setText("");
     }
 
-    public void setThumb(Context context, String token, String thumb) {
-        mImageHelper = LoadImageHelper.with(context)
-                .load(token, thumb)
-                .into(mVideoPlayer.getThumb());
+    /**
+     * load message show
+     * @param isShow
+     * @param stringResId
+     */
+    private void loadMessageShow(boolean isShow, int stringResId) {
+        if(isShow) {
+            mLoadMessage.setText(mContext.getResources().getString(stringResId));
+            mLoadMessage.setVisibility(View.VISIBLE);
+            mSpinner.setVisibility(View.GONE);
+        } else {
+            mLoadMessage.setVisibility(View.GONE);
+            mSpinner.setVisibility(View.VISIBLE);
+        }
     }
 
     /**
      * require source, default no refresh
-     * @param token
-     * @param title
-     * @param sourceUrl
+     * @param videoInfo
      */
-    public void requiredSourceInfo(String token, String title, String sourceUrl) {
-        requiredSourceInfo(token, title, sourceUrl, false);
+    public void requiredSourceInfo(VideoInfo videoInfo) {
+        requiredSourceInfo(videoInfo, false);
     }
 
     /**
      * require source
-     * @param token
-     * @param title
-     * @param sourceUrl
+     * @param videoInfo
      * @param forceRefresh true it will be get data from web
      */
-    public void requiredSourceInfo(String token, String title, String sourceUrl, boolean forceRefresh) {
+    public void requiredSourceInfo(VideoInfo videoInfo, boolean forceRefresh) {
         //Log.d("VideoTvHolder", name + "----" + sourceUrl);
-        if(sourceUrl != null) {
+        long cm = System.currentTimeMillis();
+        if(videoInfo != null && videoInfo.url != null) {
+            loadMessageShow(true, R.string.source_loading);
+
             mCurrentTaskId = mIdGenerator.nextId();
-            mSourceRequest = new SourceRequest(token, title);
-            mSourceRequest.start(sourceUrl, mCurrentTaskId, forceRefresh);
-            mLoadMessage.setText(mContext.getResources().getString(R.string.source_loading));
+            mSourceRequest = new SourceRequest(videoInfo.token, videoInfo.title, videoInfo.url, mCurrentTaskId, forceRefresh);
+            mSourceRequest.start();
         }
+
+        Log.d(TAG, "required time: " + (System.currentTimeMillis() - cm));
     }
 
-    private void startVideo() {
+    /**
+     * start video player
+     */
+    private void startVideo(final String token) {
+        long cm = System.currentTimeMillis();
         if(mData.size() > 0 && mCurrentSourceIndex < mData.size()) {
             VideoSourceInfo videoSourceInfo = mData.get(mCurrentSourceIndex);
 
@@ -173,16 +483,58 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
             headers.put("origin", HsUrl.getDomain());
             headers.put("referer", videoSourceInfo.url);
 
-            mVideoPlayer.release();
             mVideoPlayer.setVideoPath(playUrl, headers);
+
+            mVideoPlayer.setOnPreParedListener(new TuVideoPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(VideoPlayer videoPlayer) {
+                    String title = mVideoPlayer.getTitle().toString();
+                    if(!TextUtils.isEmpty(title)) {
+                        String[] titleArr = title.split("\n");
+                        File file = null;
+                        for(String fileName: titleArr) {
+                            Log.d(TAG, "file name : " + fileName + ".ass");
+                            file = new File(Setting.getSubtitleDir() + fileName + ".ass");
+                            if(file.exists()) {
+                                break;
+                            }
+                        }
+
+                        //default load from file dir
+                        if(file != null && file.exists()) {
+                            mVideoPlayer.loadSubtitle(file);
+                        } else {
+                            //other, load from assets
+                            DetailInfo detailInfo = HStreamDB.queryDetailInfo(token);
+                            String subtitle = detailInfo.getSubtitle_path();
+                            if(!TextUtils.isEmpty(subtitle)) {
+                                mVideoPlayer.loadSubtitleFromAssets(HSAssetManager.getSubtitleDir() + subtitle);
+                            }
+                        }
+                    }
+                }
+            });
         }
+
+        Log.d(TAG, "start video : " + (System.currentTimeMillis() - cm));
     }
 
-    private void onRequiredDetailSuccess(VideoDetailInfo info, List<VideoSourceInfo> result, int taskId) {
+
+
+    /**
+     * source request success
+     * @param info
+     * @param result
+     * @param taskId
+     * @param token
+     */
+    private void onRequiredDetailSuccess(VideoDetailInfo info, List<VideoSourceInfo> result, int taskId, String token) {
         if(mCurrentTaskId == taskId) {
 
             if(info != null) {
-                mVideoPlayer.setTitle(mVideoPlayer.getTitle() + "\n" + info.getAlternativeName());
+                mVideoDetailInfo = info;
+                mVideoPlayer.setTitle(mVideoInfo.title + "\n" + mVideoDetailInfo.getAlternativeName());
+                mOfferingDate.setText(mVideoDetailInfo.getOfferingDate());
             }
 
             if(result != null && result.size() > 0) {
@@ -190,28 +542,26 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
                 mData.addAll(result);
                 mAdapter.notifyDataSetChanged();
 
-                mSpinner.setVisibility(View.VISIBLE);
-                mLoadMessage.setVisibility(View.GONE);
+                loadMessageShow(false, 0);
             } else {
                 mData.clear();
-                mLoadMessage.setText(mContext.getResources().getString(R.string.source_no_found));
-
-                mSpinner.setVisibility(View.GONE);
-                mLoadMessage.setVisibility(View.VISIBLE);
-
+                loadMessageShow(true, R.string.source_no_found);
             }
 
-            startVideo();
+            startVideo(token);
         }
     }
 
     private void onRequiredDetailFail(int taskId) {
         if(mCurrentTaskId == taskId) {
-            mLoadMessage.setText(mContext.getResources().getString(R.string.source_no_found));
-            mVideoPlayer.release();
+            loadMessageShow(true, R.string.source_no_found);
+            mVideoPlayer.suspend();
         }
     }
 
+    /**
+     * source adapter
+     */
     private class SourceAdapter extends BaseAdapter {
 
         private Context mContext;
@@ -246,46 +596,55 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
         }
     }
 
-    private class SourceRequest {
+    /**
+     * source request
+     */
+    private class SourceRequest extends Thread{
 
         private AtomicInteger requestNum = new AtomicInteger();
         private int mTaskId = -1;
 
         private String mToken;
         private String mTitle;
+        private String mUrl;
         private boolean mForceRefresh = false;
 
         private VideoDetailInfo detailInfo;
         private List<VideoSourceInfo> sourceInfoList = new ArrayList<>();
         private List<HsRequest> requestList = new ArrayList<>();
 
-        private SourceRequest(String token, String title) {
+        private SourceRequest(String token, String title, String url, int taskId, boolean forceRefresh) {
             Assert.assertNotNull("token not null", token);
             mToken = token;
             mTitle = title;
-        }
-
-        public void start(String url, int taskId) {
-            start(url, taskId, false);
-        }
-
-        public void start(String url, int taskId, boolean forceRefresh) {
-            Assert.assertNotNull("start url not null", url);
+            mUrl = url;
             mTaskId = taskId;
             mForceRefresh = forceRefresh;
-            requiredSourceDetail(url);
+        }
+
+        @Override
+        public void run() {
+            requiredSourceDetail(mUrl);
         }
 
         //source detail
-        private synchronized void requiredSourceDetail(final String sourceUrl) {
+        private void requiredSourceDetail(final String sourceUrl) {
             if(!mForceRefresh) {
                 List<SourceInfo> sourceList = HStreamDB.querySoruceInfoByToken(mToken, true);
                 if(sourceList != null && sourceList.size() > 0) {
+                    sourceInfoList.clear();
                     for(SourceInfo source: sourceList) {
                         VideoSourceInfo info = new VideoSourceInfo();
                         info.name = source.getSource_name();
                         info.videoUrl = source.getVideo_url();
                         sourceInfoList.add(info);
+                    }
+
+                    DetailInfo info = HStreamDB.queryDetailInfo(mToken);
+                    if(info != null) {
+                        detailInfo = new VideoDetailInfo();
+                        detailInfo.setAlternativeName(info.getAlternative_name());
+                        detailInfo.setOfferingDate(info.getOffering_date());
                     }
 
                     notifySuccess();
@@ -411,6 +770,17 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
                             HStreamDB.putSourceInfo(source);
                         }
 
+                        if(detailInfo != null) {
+                            DetailInfo detail = new DetailInfo();
+                            detail.setToken(mToken);
+                            detail.setVideo_title(mTitle);
+                            detail.setAlternative_name(detailInfo.getAlternativeName());
+                            detail.setOffering_date(detailInfo.getOfferingDate());
+                            //detail.setDetail_url(null); TO DO
+
+                            HStreamDB.putDetailInfo(detail);
+                        }
+
                         notifySuccess();
                     }
                 }
@@ -428,13 +798,40 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
         }
 
         private void notifySuccess() {
-            //notify the success
-            onRequiredDetailSuccess(detailInfo, sourceInfoList, mTaskId);
+
+            //auto load
+            if(detailInfo != null) {
+                autoLoadSubtitle(mToken, detailInfo.getAlternativeName());
+            }
+
+            mHandler.post(new Runnable() {
+
+                @Override
+                public void run() {
+                    //notify the success
+                    onRequiredDetailSuccess(detailInfo, sourceInfoList, mTaskId, mToken);
+                }
+            });
         }
 
         private void notifyFail() {
             onRequiredDetailFail(mTaskId);
         }
-    }
 
+        /**
+         * auto load subtitle bind the video, but when it query only one and not exist in detail info
+         * @param token
+         * @param query
+         */
+        private void autoLoadSubtitle(String token, String query) {
+            List<String> subtitleList = HSAssetManager.querySubtitle(query);
+            if(subtitleList != null && subtitleList.size() == 1) {
+                DetailInfo detailInfo = HStreamDB.queryDetailInfo(token);
+                if(TextUtils.isEmpty(detailInfo.getSubtitle_path())) {
+                    detailInfo.setSubtitle_path(subtitleList.get(0));
+                    HStreamDB.putDetailInfo(detailInfo);
+                }
+            }
+        }
+    }
 }

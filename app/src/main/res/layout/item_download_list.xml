@@ -18,7 +18,17 @@
             android:layout_gravity="center"
             android:textColor="@color/primary_drawable_dark"
             android:textSize="16sp"
-            android:background="@color/primary_drawable_light"/>
+            android:background="@color/cyan_600"/>
+
+        <Button
+            android:text="@string/common_subtitle"
+            android:id="@+id/subtitle_download"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:textColor="@color/primary_drawable_dark"
+            android:textSize="16sp"
+            android:background="@color/light_green_600"/>
 
         <Button
             android:id="@+id/delete"
@@ -28,7 +38,7 @@
             android:layout_gravity="center"
             android:textColor="@color/primary_drawable_dark"
             android:textSize="16sp"
-            android:background="@color/orange_3000"/>
+            android:background="@color/red_500"/>
 
     </LinearLayout>
 

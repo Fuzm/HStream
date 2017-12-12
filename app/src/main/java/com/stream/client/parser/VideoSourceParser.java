@@ -132,6 +132,7 @@ public class VideoSourceParser {
 
         public static VideoDetailInfo parseDetail(Element root) {
             VideoDetailInfo info = null;
+            //japanese name
             try {
                 info = new VideoDetailInfo();
                 Elements h4s = root.getElementById("extras").getElementsByTag("h4");
@@ -142,6 +143,22 @@ public class VideoSourceParser {
                     }
                 }
 
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            //offering date
+            try {
+                String offeringDate = "";
+                Elements contents = root.getElementById("info").getElementsByClass("entry-content").get(0).children();
+                for(Element element : contents) {
+                    if(element.html().matches(".*\\d+.*")) {
+                        offeringDate = element.html();
+                        break;
+                    }
+                }
+
+                info.setOfferingDate(offeringDate);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -159,7 +176,7 @@ public class VideoSourceParser {
                     if(videoUrl != null && !"".equals(videoUrl.trim())) {
                         info = new VideoSourceInfo();
                         info.name = "Default";
-                        info.videoUrl = videoUrl;
+                        info.videoUrl = videoUrl.replace("\\", "");
                         break;
                     }
                 }
@@ -183,6 +200,7 @@ public class VideoSourceParser {
 
                         if(!TextUtils.isEmpty(source.videoUrl)) {
                             list.add(source);
+                            break;
                         }
                     }
                 }
@@ -194,4 +212,7 @@ public class VideoSourceParser {
         }
     }
 
+    public static void main(String[] args) {
+        System.out.println("sdfsdfdsdfssdfsdf".matches(".*\\d+.*"));
+    }
 }

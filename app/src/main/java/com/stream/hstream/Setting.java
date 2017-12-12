@@ -79,6 +79,8 @@ public class Setting {
 
     private static final String APP_DIRNAME = "HStream";
     private static final String DOWNLOAD = "download";
+    private static final String SUBTITLE_DIR = "subtitle";
+    private static final String TEMP_DIR = "temp";
 
     @Nullable
     public static String getDownloadDir() {
@@ -94,9 +96,30 @@ public class Setting {
         return null;
     }
 
+    public static String getSubtitleDir() {
+        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+            File file = new File(Environment.getExternalStorageDirectory(),
+                    APP_DIRNAME + File.separator + SUBTITLE_DIR);
+            if(!file.exists()) {
+                file.mkdirs();
+            }
+            return file.getAbsolutePath() + File.separator;
+        }
 
+        return null;
+    }
 
+    public static String getTempDir() {
+        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+            File file = new File(Environment.getExternalStorageDirectory(),
+                    APP_DIRNAME + File.separator + TEMP_DIR);
+            if(!file.exists()) {
+                file.mkdirs();
+            }
+            return file.getAbsolutePath() + File.separator;
+        }
 
-
+        return null;
+    }
 
 }

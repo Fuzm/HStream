@@ -15,7 +15,6 @@ import android.support.v4.app.NotificationCompat;
 
 import com.hippo.yorozuya.FileUtils;
 import com.hippo.yorozuya.SimpleHandler;
-import com.stream.client.data.VideoInfo;
 import com.stream.dao.DownloadInfo;
 import com.stream.hstream.HStreamApplication;
 import com.stream.hstream.MainActivity;
@@ -34,8 +33,7 @@ public class DownloadService extends Service implements DownloadManager.Download
 
     private static final String TAG = DOWNLOAD_SERVICE.getClass().getSimpleName();
 
-    public static final String KEY_VIDEO_INFO = "video_info";
-    public static final String KEY_DOWN_INFO = "download_info";
+    public static final String KEY_DETAIL_INFO = "detail_info";
     public static final String KEY_TOKEN_LIST = "token_list";
 
     public static final String ACTION_START = "start";
@@ -53,7 +51,7 @@ public class DownloadService extends Service implements DownloadManager.Download
     private static final int ID_DOWNLOADING = 1;
     private static final int ID_DOWNLOADED = 2;
 
-    private VideoInfo mVideoInfo;
+    private DownloadDetail mDownloadDetail;
     private DownloadManager mDownloadManager;
 
     private NotificationManager mNotifyManager;
@@ -61,6 +59,13 @@ public class DownloadService extends Service implements DownloadManager.Download
     private NotificationCompat.Builder mDownloadedBuilder;
     private NotificationDelay mDownloadingDelay;
     private NotificationDelay mDownloadedDelay;
+
+    public static Intent newIntent(Context context, DownloadDetail detail) {
+        Intent intent = new Intent(context, DownloadService.class);
+        intent.setAction(DownloadService.ACTION_START);
+        intent.putExtra(DownloadService.KEY_DETAIL_INFO, detail);
+        return intent;
+    }
 
     @Override
     public void onCreate() {
@@ -79,8 +84,8 @@ public class DownloadService extends Service implements DownloadManager.Download
 
     private void handleIntent(Intent intent) {
         if(ACTION_START == intent.getAction()) {
-            mVideoInfo = intent.getParcelableExtra(KEY_VIDEO_INFO);
-            mDownloadManager.startDownload(mVideoInfo);
+            mDownloadDetail = intent.getParcelableExtra(KEY_DETAIL_INFO);
+            mDownloadManager.startDownload(mDownloadDetail);
         } else if(ACTION_START_RANGE == intent.getAction()) {
             String[] tokenList = intent.getStringArrayExtra(KEY_TOKEN_LIST);
             mDownloadManager.startRangeDownload(tokenList);
@@ -196,7 +201,7 @@ public class DownloadService extends Service implements DownloadManager.Download
     }
 
     @Override
-    public void onStart(DownloadInfo info) {
+    public void onStart(DownloadDetail info) {
         if (mNotifyManager == null) {
             return;
         }
@@ -228,7 +233,7 @@ public class DownloadService extends Service implements DownloadManager.Download
     }
 
     @Override
-    public void onFinish(DownloadInfo info) {
+    public void onFinish(DownloadDetail info) {
         ensureDownloadedBuilder();
 
         mDownloadedBuilder

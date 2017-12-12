@@ -19,6 +19,13 @@ public class VideoInfo implements Parcelable{
 
     public VideoInfo() {}
 
+    public VideoInfo(VideoInfo videoInfo) {
+        this.token = videoInfo.token;
+        this.title = videoInfo.title;
+        this.thumb = videoInfo.thumb;
+        this.url = videoInfo.url;
+    }
+
     protected VideoInfo(Parcel in) {
         this.token = in.readString();
         this.title = in.readString();

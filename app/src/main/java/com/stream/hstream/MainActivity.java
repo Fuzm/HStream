@@ -8,6 +8,7 @@ import android.view.MenuItem;
 import android.view.View;
 
 import com.hippo.drawerlayout.DrawerLayout;
+import com.stream.hstream.fragments.ReleaseCalendarFragment;
 import com.stream.hstream.fragments.VideoDetailFragment;
 import com.stream.hstream.fragments.VideoDownloadFragment;
 import com.stream.hstream.fragments.VideoFavoriteFragment;
@@ -27,8 +28,8 @@ public class MainActivity extends StageActivity
         registerLaunchMode(VideoListFragment.class, SceneFragment.LAUNCH_MODE_SINGLE_TOP);
         registerLaunchMode(VideoDetailFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
         registerLaunchMode(VideoFavoriteFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
-        registerLaunchMode(VideoFavoriteFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
         registerLaunchMode(VideoDownloadFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
+        registerLaunchMode(ReleaseCalendarFragment.class, SceneFragment.LAUNCH_MODE_STANDARD);
     }
 
     @Override
@@ -129,6 +130,8 @@ public class MainActivity extends StageActivity
             // Handle the camera action
         } else if (id == R.id.nav_download) {
             startScene(new Announcer(VideoDownloadFragment.class));
+        } else if(id == R.id.nav_release) {
+            startScene(new Announcer(ReleaseCalendarFragment.class));
         }
 
         mDrawerLayout.closeDrawer(Gravity.LEFT);

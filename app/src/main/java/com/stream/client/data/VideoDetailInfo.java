@@ -9,12 +9,16 @@ import android.os.Parcelable;
 
 public class VideoDetailInfo implements Parcelable {
 
+    private String detailUrl;
     private String alternativeName;
+    private String offeringDate;
 
     public VideoDetailInfo() {}
 
     protected VideoDetailInfo(Parcel in) {
         alternativeName = in.readString();
+        detailUrl = in.readString();
+        offeringDate = in.readString();
     }
 
     public String getAlternativeName() {
@@ -25,6 +29,22 @@ public class VideoDetailInfo implements Parcelable {
         this.alternativeName = alternativeName;
     }
 
+    public String getDetailUrl() {
+        return detailUrl;
+    }
+
+    public void setDetailUrl(String detailUrl) {
+        this.detailUrl = detailUrl;
+    }
+
+    public String getOfferingDate() {
+        return offeringDate;
+    }
+
+    public void setOfferingDate(String offeringDate) {
+        this.offeringDate = offeringDate;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -33,6 +53,8 @@ public class VideoDetailInfo implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(alternativeName);
+        dest.writeString(detailUrl);
+        dest.writeString(offeringDate);
     }
 
     public static final Creator<VideoDetailInfo> CREATOR = new Creator<VideoDetailInfo>() {
@@ -46,5 +68,6 @@ public class VideoDetailInfo implements Parcelable {
             return new VideoDetailInfo[size];
         }
     };
+
 
 }

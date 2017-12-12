@@ -2,7 +2,9 @@ package com.stream.hstream.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.IntegerRes;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,8 +28,12 @@ import com.stream.scene.SceneFragment;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 import com.stream.widget.DrawableSearchEditText;
 
+import java.io.InputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Fuzm on 2017/3/24 0024.
@@ -74,7 +80,7 @@ public class VideoListFragment extends SceneFragment {
 
         //view pager
         mViewPager = (ViewPager) view.findViewById(R.id.tab_page);
-        mViewPager.setAdapter(new TitlePageAdapter(getFragmentManager(), fragments));
+        mViewPager.setAdapter(new TitlePageAdapter(getChildFragmentManager(), fragments));
         mViewPager.setOffscreenPageLimit(1);
         mViewPager.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -133,8 +139,7 @@ public class VideoListFragment extends SceneFragment {
         mSearchText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getActivity(), VideoSearchActivity.class);
-                startActivity(intent);
+                startActivity(VideoSearchActivity.newIntent(getActivity()));
             }
         });
 
@@ -164,4 +169,5 @@ public class VideoListFragment extends SceneFragment {
             finish();
         }
     }
+
 }

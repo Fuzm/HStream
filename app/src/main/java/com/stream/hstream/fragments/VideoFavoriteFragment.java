@@ -1,7 +1,6 @@
 package com.stream.hstream.fragments;
 
 import android.content.Context;
-import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -13,17 +12,15 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.daimajia.swipe.SwipeLayout;
 import com.stream.dao.Favorite;
 import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
-import com.stream.hstream.adapter.SimpleAdapter;
 import com.stream.hstream.adapter.SimpleHolder;
 import com.stream.scene.ToolBarFragment;
 import com.stream.util.DrawableManager;
 import com.stream.util.LoadImageHelper;
 import com.stream.videoplayerlibrary.common.VideoUtils;
-import com.stream.videoplayerlibrary.tv.TuIjkMediaPlayerManager;
+import com.stream.videoplayerlibrary.tv.TuMediaPlayerManager;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 import com.stream.widget.view.ViewTransition;
 
@@ -85,7 +82,7 @@ public class VideoFavoriteFragment extends ToolBarFragment {
         mViewTransition = null;
         mData = null;
 
-        TuIjkMediaPlayerManager.releaseManager();
+        TuMediaPlayerManager.releaseManager();
     }
 
     @Override
@@ -131,7 +128,7 @@ public class VideoFavoriteFragment extends ToolBarFragment {
         @Override
         public void onBindViewHolder(VideoHolder holder, int position) {
             Favorite favorite = mData.get(position);
-            holder.mVideoPlayer.setUp(favorite.getVideoUrl(), favorite.getTitle(), TuVideoPlayer.MODE_NORMAL_SCREEN);
+            holder.mVideoPlayer.setUp(favorite.getVideo_url(), favorite.getTitle(), TuVideoPlayer.MODE_NORMAL_SCREEN);
 
             if(favorite.getThumb().startsWith("http://") || favorite.getThumb().startsWith("https://")) {
                 holder.setThumb(mContext, favorite.getToken(), favorite.getThumb());
@@ -174,7 +171,7 @@ public class VideoFavoriteFragment extends ToolBarFragment {
                 Favorite favorite = mData.get(index);
                 HStreamDB.removeFavorite(favorite.getToken());
 
-                mVideoPlayer.release();
+                mVideoPlayer.suspend();
                 mData.remove(index);
                 mAdapter.notifyDataSetChanged();
             }

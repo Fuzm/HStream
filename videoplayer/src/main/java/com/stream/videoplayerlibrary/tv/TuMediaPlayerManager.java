@@ -4,10 +4,12 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.os.Process;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
@@ -16,6 +18,7 @@ import android.view.ViewGroup;
 import com.stream.videoplayerlibrary.common.ResizeTextureView;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Created by Fuzm on 2017/4/22 0022.
@@ -29,21 +32,31 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
     private static final int HANDLER_RELEASE = 2;
 
     private static TuMediaPlayerManager sTuMediaPlayerManager;
-    private static TextureView sTextureView;
-    private static SurfaceTexture sSavedSurfaceTexture;
+    private TextureView mTextureView;
+    private SurfaceTexture mSavedSurfaceTexture;
 
     private VideoPlayer mVideoPlayer;
-    private MediaPlayer mMediaPlayer;
+    private ITuMediaPlayer mMediaPlayer;
+
     private String mUri;
-    private int mAudioSession;
-    private int mSurfaceWidth;
-    private int mSurfaceHeight;
+    private Map<String, String> mHeaders;
+
+//    private int mAudioSession;
+//    private int mSurfaceWidth;
+//    private int mSurfaceHeight;
 
     private HandlerThread mMediaHandlerThread;
     private MediaHandler mMediaHandler;
     private Handler mainThreadHandler;
 
-    public static TuMediaPlayerManager instance() {
+    private TuMediaPlayerManager() {
+        mMediaHandlerThread = new HandlerThread(TAG, Process.THREAD_PRIORITY_URGENT_AUDIO);
+        mMediaHandlerThread.start();
+        mMediaHandler = new MediaHandler((mMediaHandlerThread.getLooper()));
+        mainThreadHandler = new Handler();
+    }
+
+    public synchronized static TuMediaPlayerManager instance() {
         if(sTuMediaPlayerManager == null) {
             sTuMediaPlayerManager = new TuMediaPlayerManager();
         }
@@ -51,53 +64,51 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
         return sTuMediaPlayerManager;
     }
 
-    private TuMediaPlayerManager() {
-        mMediaHandlerThread = new HandlerThread(TAG);
-        mMediaHandlerThread.start();
-        mMediaHandler = new MediaHandler((mMediaHandlerThread.getLooper()));
-        mainThreadHandler = new Handler();
-    }
-
-    public static TextureView initTextureView(Context context) {
-        removeTextureView();
-        sTextureView = new ResizeTextureView(context);
-        sTextureView.setSurfaceTextureListener(TuMediaPlayerManager.instance());
-        return sTextureView;
-    }
-
-    public static void removeTextureView() {
-        sSavedSurfaceTexture = null;
-        if (sTextureView != null && sTextureView.getParent() != null) {
-            ((ViewGroup) sTextureView.getParent()).removeView(sTextureView);
-        }
-    }
-
-    public static void releaseManager() {
-        releaseManager(false);
-    }
-
-    public static void releaseManager(boolean currentPlayer) {
+    public synchronized static void releaseManager() {
         if(sTuMediaPlayerManager != null) {
-            if(!currentPlayer && sTuMediaPlayerManager.mVideoPlayer != null) {
-                sTuMediaPlayerManager.mVideoPlayer.onRelease();
-                sTuMediaPlayerManager.mVideoPlayer = null;
-            }
-            if( sTuMediaPlayerManager.mMediaPlayer != null) {
-                sTuMediaPlayerManager.mMediaPlayer.release();
-            }
-
-            sTextureView = null;
-            sSavedSurfaceTexture = null;
-            //sTuMediaPlayerManager.mUri = null;
+            sTuMediaPlayerManager.release(true);
         }
-
     }
 
-    public static TextureView getCurrentTextureView() {
-        return sTextureView;
+    public synchronized void release(boolean clearState) {
+        if(sTuMediaPlayerManager != null) {
+
+            if(sTuMediaPlayerManager.getVideoPlayer() != null) {
+                sTuMediaPlayerManager.getVideoPlayer().onRelease(clearState);
+            }
+
+            if( sTuMediaPlayerManager.mMediaPlayer != null) {
+                sTuMediaPlayerManager.releaseMediaPlayer();
+            }
+
+            mTextureView = null;
+            mSavedSurfaceTexture = null;
+            mVideoPlayer = null;
+        }
+    }
+
+    private synchronized void initTextureView(Context context) {
+        removeTextureView();
+        mTextureView = new ResizeTextureView(context);
+        mTextureView.setSurfaceTextureListener(TuMediaPlayerManager.instance());
+    }
+
+    private void removeTextureView() {
+        mSavedSurfaceTexture = null;
+        if (mTextureView != null && mTextureView.getParent() != null) {
+            ((ViewGroup) mTextureView.getParent()).removeView(mTextureView);
+        }
+    }
+
+    public TextureView getCurrentTextureView() {
+        return mTextureView;
     }
 
     public void setVideoPlayer(VideoPlayer player) {
+        if(mVideoPlayer != null && !isCurrentVideoPlayer(player)) {
+            mVideoPlayer.onRelease(true);
+        }
+
         mVideoPlayer = player;
     }
 
@@ -113,52 +124,78 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
         }
     }
 
-    public void setVideoPath(String uri) {
+    public TextureView openVideo(Context context, String uri, Map<String, String> headers) {
+//        if(mMediaPlayer != null) {
+//            releaseMediaPlayer();
+//        }
+
         mUri = uri;
+        mHeaders = headers;
+
+        initTextureView(context);
+        return mTextureView;
     }
 
-    public String getVideoPath() {
-        return mUri;
-    }
-
-    public void prepare() {
+    private void prepare() {
         releaseMediaPlayer();
         Message msg = new Message();
         msg.what = HANDLER_PREPARE;
         mMediaHandler.sendMessage(msg);
     }
 
-    public void releaseMediaPlayer() {
+    private void releaseMediaPlayer() {
         Message msg = new Message();
         msg.what = HANDLER_RELEASE;
         mMediaHandler.sendMessage(msg);
     }
 
     public void start() {
-        mMediaPlayer.start();
+        if(mMediaPlayer != null)
+            mMediaPlayer.start();
     }
 
     public void pause() {
-        mMediaPlayer.pause();
+        if(mMediaPlayer != null && mMediaPlayer.isPlaying())
+            mMediaPlayer.pause();
     }
 
     public void seekTo(long posi) {
-        mMediaPlayer.seekTo((int) posi);
-    }
-
-    public int getCurrentPosition() {
-        if(mMediaPlayer == null) {
-            return 0;
+        if(mMediaPlayer != null) {
+            mMediaPlayer.seekTo(posi);
         }
-        return mMediaPlayer.getCurrentPosition();
     }
 
-    public int getDuration() {
+    public boolean isPlaying() {
+        if(mMediaPlayer != null) {
+            return  mMediaPlayer.isPlaying();
+        } else {
+            return false;
+        }
+    }
+
+    public long getCurrentPosition() {
+        long position = 0;
+        if(mMediaPlayer == null) {
+            return position;
+        }
+
+        try {
+            position = mMediaPlayer.getCurrentPosition();
+        } catch (Exception e) {
+            Log.d(TAG, "get current positon by pleayer-" + mMediaPlayer.toString() + "-hashcode-" + mMediaPlayer.hashCode());
+            e.printStackTrace();
+            position = 0;
+        }
+        return position;
+    }
+
+    public long getDuration() {
         return mMediaPlayer.getDuration();
     }
 
-    private MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
-        public void onPrepared(final MediaPlayer mp) {
+    private ITuMediaPlayer.OnPreparedListener mPreparedListener = new ITuMediaPlayer.OnPreparedListener() {
+        @Override
+        public void onPrepared(final ITuMediaPlayer mp) {
             mMediaPlayer.start();
             if(mVideoPlayer != null) {
                 mainThreadHandler.post(new Runnable() {
@@ -171,63 +208,76 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
         }
     };
 
-    private MediaPlayer.OnInfoListener mInfoListener = new MediaPlayer.OnInfoListener() {
-        public  boolean onInfo(final MediaPlayer mp, final int arg1, final int arg2) {
-            mainThreadHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mVideoPlayer.onInfo(mp, arg1, arg2);
-                }
-            });
+    private ITuMediaPlayer.OnInfoListener mInfoListener = new ITuMediaPlayer.OnInfoListener() {
+        @Override
+        public boolean onInfo(final ITuMediaPlayer mp, final int i, final int i1) {
+            if(mVideoPlayer != null) {
+                mainThreadHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mVideoPlayer.onInfo(mp, i, i1);
+                    }
+                });
+            }
+
             return false;
         }
     };
 
-    private MediaPlayer.OnBufferingUpdateListener mBufferingUpdateListener = new MediaPlayer.OnBufferingUpdateListener() {
+    private ITuMediaPlayer.OnBufferingUpdateListener mBufferingUpdateListener = new ITuMediaPlayer.OnBufferingUpdateListener() {
         @Override
-        public void onBufferingUpdate(final MediaPlayer mp, final int percent) {
-            mainThreadHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mVideoPlayer.onBufferingUpdate(mp, percent);
-                }
-            });
+        public void onBufferingUpdate(final ITuMediaPlayer mp, final int i) {
+            if(mVideoPlayer != null) {
+                mainThreadHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mVideoPlayer != null) {
+                            mVideoPlayer.onBufferingUpdate(mp, i);
+                        }
+                    }
+                });
+            }
         }
     };
 
-    private MediaPlayer.OnCompletionListener mCompletionListener = new MediaPlayer.OnCompletionListener() {
-        public void onCompletion(final MediaPlayer mp) {
-            mainThreadHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mVideoPlayer.onCompletion(mp);
-                }
-            });
+    private ITuMediaPlayer.OnCompletionListener mCompletionListener = new ITuMediaPlayer.OnCompletionListener() {
+        @Override
+        public void onCompletion(final ITuMediaPlayer mp) {
+            if(mVideoPlayer != null) {
+                mainThreadHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mVideoPlayer.onCompletion(mp);
+                    }
+                });
+            }
         }
     };
 
-    private MediaPlayer.OnErrorListener mErrorListener = new MediaPlayer.OnErrorListener() {
+    private ITuMediaPlayer.OnErrorListener mErrorListener = new ITuMediaPlayer.OnErrorListener() {
         @Override
-        public boolean onError(final MediaPlayer mp, final int what, final int extra) {
-            mainThreadHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mVideoPlayer.onError(mp, what, extra);
-                }
-            });
+        public boolean onError(final ITuMediaPlayer mp, final int i, final int i1) {
+            if(mVideoPlayer != null) {
+                mainThreadHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mVideoPlayer.onError(mp, i, i1);
+                    }
+                });
+            }
             return true;
         }
     };
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        mSurfaceWidth = width;
-        mSurfaceHeight = height;
+//        mSurfaceWidth = width;
+//        mSurfaceHeight = height;
 
-        if(sSavedSurfaceTexture != null) {
-            sTextureView.setSurfaceTexture(sSavedSurfaceTexture);
+        if(mSavedSurfaceTexture != null) {
+            mTextureView.setSurfaceTexture(mSavedSurfaceTexture);
         } else {
-            sSavedSurfaceTexture = surface;
+            mSavedSurfaceTexture = surface;
             prepare();
         }
     }
@@ -239,7 +289,7 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        return sSavedSurfaceTexture == null;
+        return mSavedSurfaceTexture == null;
     }
 
     @Override
@@ -260,16 +310,21 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
             switch (msg.what) {
                 case HANDLER_PREPARE:
                     try {
-                        mMediaPlayer = new MediaPlayer();
+                        if(mMediaPlayer != null) {
+                            mMediaPlayer.release();
+                        }
+
+                        Log.d(TAG, "play video address : " + mUri);
+                        mMediaPlayer = new TuIjkMediaPlayer();
                         mMediaPlayer.setOnPreparedListener(mPreparedListener);
                         mMediaPlayer.setOnInfoListener(mInfoListener);
                         mMediaPlayer.setOnCompletionListener(mCompletionListener);
                         mMediaPlayer.setOnErrorListener(mErrorListener);
                         mMediaPlayer.setOnBufferingUpdateListener(mBufferingUpdateListener);
 
-                        //mMediaPlayer.setDataSource(getContext(), mUri, null);
-                        mMediaPlayer.setDataSource(mUri);
-                        mMediaPlayer.setSurface(new Surface(sSavedSurfaceTexture));
+                        Log.d(TAG, "play url: " + mUri);
+                        mMediaPlayer.setDataSource(mUri, mHeaders);
+                        mMediaPlayer.setSurface(new Surface(mSavedSurfaceTexture));
                         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                         mMediaPlayer.setScreenOnWhilePlaying(true);
                         mMediaPlayer.prepareAsync();

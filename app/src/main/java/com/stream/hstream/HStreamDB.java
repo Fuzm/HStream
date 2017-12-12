@@ -10,6 +10,8 @@ import android.util.Log;
 import com.danikula.videocache.Source;
 import com.stream.dao.DaoMaster;
 import com.stream.dao.DaoSession;
+import com.stream.dao.DetailDao;
+import com.stream.dao.DetailInfo;
 import com.stream.dao.DownloadDao;
 import com.stream.dao.DownloadInfo;
 import com.stream.dao.Favorite;
@@ -45,7 +47,7 @@ public class HStreamDB {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+            Log.d(TAG, "Updrade version: " + oldVersion + "->" + newVersion);
         }
     }
 
@@ -85,6 +87,20 @@ public class HStreamDB {
         } else {
             // Insert
             dao.insert(downloadInfo);
+        }
+    }
+
+    /**
+     * update download info state
+     * @param token
+     * @param state
+     */
+    public synchronized static void updateDownloadInfoState(String token, int state) {
+        DownloadDao dao = sDaoSession.getDownloadDao();
+        DownloadInfo info = null;
+        if (null != (info = dao.load(token))) {
+            info.setState(state);
+            dao.update(info);
         }
     }
 
@@ -239,5 +255,27 @@ public class HStreamDB {
         }
 
         return false;
+    }
+
+    /**
+     * save detail info add or update;
+     * @param detailInfo
+     */
+    public synchronized static void putDetailInfo(DetailInfo detailInfo) {
+        DetailDao dao = sDaoSession.getDetailDao();
+        if(null != detailInfo.getToken() && null != dao.load(detailInfo.getToken())) {
+            dao.update(detailInfo);
+        } else {
+            dao.insert(detailInfo);
+        }
+    }
+
+    /**
+     * query detail info by token
+     * @param token
+     * @return
+     */
+    public synchronized static DetailInfo queryDetailInfo(String token) {
+        return sDaoSession.getDetailDao().load(token);
     }
 }

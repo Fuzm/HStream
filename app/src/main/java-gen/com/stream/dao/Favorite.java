@@ -56,19 +56,19 @@ public class Favorite {
         this.thumb = thumb;
     }
 
-    public String getSourceUrl() {
+    public String getSource_url() {
         return source_url;
     }
 
-    public void setSourceUrl(String source_url) {
+    public void setSource_url(String source_url) {
         this.source_url = source_url;
     }
 
-    public String getVideoUrl() {
+    public String getVideo_url() {
         return video_url;
     }
 
-    public void setVideoUrl(String video_url) {
+    public void setVideo_url(String video_url) {
         this.video_url = video_url;
     }
 

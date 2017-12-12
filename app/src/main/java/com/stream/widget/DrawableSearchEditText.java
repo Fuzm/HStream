@@ -25,7 +25,7 @@ import java.util.List;
  * Created by Fuzm on 2017/4/9 0009.
  */
 
-public class DrawableSearchEditText extends AppCompatEditText implements TextWatcher, View.OnTouchListener{
+public class DrawableSearchEditText extends SearchEditText implements TextWatcher, View.OnTouchListener{
 
     private OnTouchListener mTouchListener;
 

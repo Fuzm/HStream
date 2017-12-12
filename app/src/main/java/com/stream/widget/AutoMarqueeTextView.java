@@ -1,6 +1,7 @@
 package com.stream.widget;
 
 import android.content.Context;
+import android.support.v7.widget.AppCompatTextView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.TextView;
@@ -31,9 +32,9 @@ public class AutoMarqueeTextView extends TextView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        if(event.getAction() == MotionEvent.ACTION_DOWN) {
-            return true;
-        }
+//        if(event.getAction() == MotionEvent.ACTION_DOWN) {
+//            return true;
+//        }
 
 
         return super.onTouchEvent(event);

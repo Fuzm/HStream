@@ -12,6 +12,7 @@ import com.stream.client.HsClient;
 import com.stream.download.DownloadManager;
 import com.stream.okhttp.MobileRequestBuilder;
 import com.stream.util.GetText;
+import com.stream.util.HSAssetManager;
 import com.stream.util.ImageBitmapHelper;
 
 import java.io.File;
@@ -52,6 +53,7 @@ public class HStreamApplication extends Application {
 
         HStreamDB.initialize(this);
         GetText.initialize(this);
+        HSAssetManager.initialize(this);
     }
 
     public static OkHttpClient getOkHttpClient(Context context) {
@@ -121,7 +123,7 @@ public class HStreamApplication extends Application {
         HStreamApplication application = (HStreamApplication) context.getApplicationContext();
         if(application.mCacheServer == null) {
             application.mCacheServer = new HttpProxyCacheServer.Builder(application)
-                    .maxCacheSize(getMemoryCacheMaxSize())
+                    .maxCacheSize(1024 * 1024 * 1024)
                     .build();
         }
         return application.mCacheServer;
@@ -147,7 +149,7 @@ public class HStreamApplication extends Application {
                 //.cookieJar()
                 .build();
 
-        String url = "http://hentaistream.com/";
+        String url = "";
         Request request = new MobileRequestBuilder(url).build();
 
         Call call = client.newCall(request);

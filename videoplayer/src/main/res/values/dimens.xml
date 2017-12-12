@@ -6,4 +6,13 @@
     <dimen name="mc_padding_size">12dp</dimen>
     <dimen name="mc_play_button_size">36dp</dimen>
 
+    <!-- Text size -->
+    <dimen name="text_super_large">24sp</dimen>
+    <dimen name="text_large">22sp</dimen>
+    <dimen name="text_little_large">20sp</dimen>
+    <dimen name="text_medium">18sp</dimen>
+    <dimen name="text_little_small">16sp</dimen>
+    <dimen name="text_small">14sp</dimen>
+    <dimen name="text_super_small">12sp</dimen>
+
 </resources>

@@ -1,16 +1,20 @@
 package com.stream.hstream.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.stream.client.data.VideoInfo;
 import com.stream.dao.Favorite;
+import com.stream.download.DownloadService;
 import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
@@ -47,65 +51,15 @@ public abstract class VideoAdapter extends RecyclerView.Adapter<VideoTvHolder> {
 
        @Override
     public void onBindViewHolder(final VideoTvHolder holder, final int position) {
+        long cm = System.currentTimeMillis();
         final VideoInfo videoInfo = getDataAt(position);
 
         //clear holder old info, because it will recycle
         holder.clear();
-
-        holder.mVideoPlayer.setUp(null, videoInfo.title, TuVideoPlayer.MODE_NORMAL_SCREEN);
-        holder.mVideoPlayer.setOnFavoriteListener(new FavoriteVideoListener(videoInfo));
-        holder.setThumb(mContext, videoInfo.token, videoInfo.thumb);
-        holder.requiredSourceInfo(videoInfo.token, videoInfo.title, videoInfo.url);
-
-        holder.mDownloadButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onItemClick(v, position);
-            }
-        });
-
-        holder.mRequireButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                //force refresh video source data
-                holder.requiredSourceInfo(videoInfo.token, videoInfo.title, videoInfo.url, true);
-            }
-        });
+        holder.init(videoInfo);
+        holder.requiredSourceInfo(videoInfo);
+        Log.d("VideoAdapter", "set holder: " + (System.currentTimeMillis() - cm));
     }
 
     public abstract VideoInfo getDataAt(int position);
-
-    public abstract void onItemClick(View view, int position);
-
-    public class FavoriteVideoListener implements TuVideoPlayer.OnFavoriteListener {
-
-        private VideoInfo mVideoInfo;
-
-        public FavoriteVideoListener(VideoInfo videoInfo) {
-            mVideoInfo = videoInfo;
-        }
-
-        @Override
-        public boolean isFavorited() {
-            return HStreamDB.existeFavorite(mVideoInfo.token);
-        }
-
-        @Override
-        public void onFavorite(String url) {
-            if(!HStreamDB.existeFavorite(mVideoInfo.token)) {
-                Favorite favorite = new Favorite();
-                favorite.setToken(mVideoInfo.token);
-                favorite.setTitle(mVideoInfo.title);
-                favorite.setThumb(mVideoInfo.thumb);
-                favorite.setSourceUrl(mVideoInfo.url);
-                favorite.setVideoUrl(url);
-                favorite.setTime(System.currentTimeMillis());
-
-                HStreamDB.putFavorite(favorite);
-            } else {
-                HStreamDB.removeFavorite(mVideoInfo.token);
-            }
-        }
-    }
 }

@@ -16,7 +16,7 @@ public class DownloadUtil {
 
     private static final String TAG = DownloadUtil.class.getSimpleName();
 
-    private static final Pattern File_PATTERN = Pattern.compile("([^/?=]*\\.mp4)");
+    private static final Pattern FILE_PATTERN = Pattern.compile("([^/?=]*\\.mp4)");
     private static final String EXTENSIONG = "mp4";
 
     public static String getFilePath(String fileName) {
@@ -56,7 +56,7 @@ public class DownloadUtil {
     }
 
     public static String getFileNameFromUrl(String url) {
-        Matcher m = File_PATTERN.matcher(url);
+        Matcher m = FILE_PATTERN.matcher(url);
         String name = null;
         if(m.find()) {
             name = m.group(0);
@@ -97,4 +97,15 @@ public class DownloadUtil {
         }
     }
 
+    public static boolean checkUrlFormat(String url) {
+        if(url != null && url.toLowerCase().matches(".*\\." + EXTENSIONG)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static void main(String[] args ) {
+        System.out.println(checkUrlFormat("sdf.mp4fsfs.mp3"));
+    }
 }

@@ -16,6 +16,11 @@
             android:title="@string/menu_download"/>
 
         <item
+            android:id="@+id/nav_release"
+            android:icon="@drawable/ic_release_black_24dp"
+            android:title="@string/menu_release"/>
+
+        <item
             android:id="@+id/nav_stub"
             android:title="stub"
             android:visible="false"/>

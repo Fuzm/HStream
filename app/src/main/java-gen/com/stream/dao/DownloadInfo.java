@@ -12,36 +12,9 @@ public class DownloadInfo {
     private String thumb;
     private String source_url;
     private String url;
+    private String alternative_name;
     private int state;
     private long time;
-
-    private long speed;
-    private long total;
-    private long finished;
-
-    public long getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(long speed) {
-        this.speed = speed;
-    }
-
-    public long getTotal() {
-        return total;
-    }
-
-    public void setTotal(long total) {
-        this.total = total;
-    }
-
-    public long getFinished() {
-        return finished;
-    }
-
-    public void setFinished(long finished) {
-        this.finished = finished;
-    }
 
     public DownloadInfo() {
     }
@@ -50,12 +23,13 @@ public class DownloadInfo {
         this.token = token;
     }
 
-    public DownloadInfo(String token, String title, String thumb, String source_url, String url, int state, long time) {
+    public DownloadInfo(String token, String title, String thumb, String source_url, String url, String alternative_name, int state, long time) {
         this.token = token;
         this.title = title;
         this.thumb = thumb;
         this.source_url = source_url;
         this.url = url;
+        this.alternative_name = alternative_name;
         this.state = state;
         this.time = time;
     }
@@ -86,11 +60,11 @@ public class DownloadInfo {
         this.thumb = thumb;
     }
 
-    public String getSourceUrl() {
+    public String getSource_url() {
         return source_url;
     }
 
-    public void setSourceUrl(String source_url) {
+    public void setSource_url(String source_url) {
         this.source_url = source_url;
     }
 
@@ -100,6 +74,14 @@ public class DownloadInfo {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getAlternative_name() {
+        return alternative_name;
+    }
+
+    public void setAlternative_name(String alternative_name) {
+        this.alternative_name = alternative_name;
     }
 
     public int getState() {

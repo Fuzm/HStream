@@ -74,12 +74,12 @@ public class FavoriteDao extends AbstractDao<Favorite, String> {
             stmt.bindString(3, thumb);
         }
  
-        String source_url = entity.getSourceUrl();
+        String source_url = entity.getSource_url();
         if (source_url != null) {
             stmt.bindString(4, source_url);
         }
  
-        String video_url = entity.getVideoUrl();
+        String video_url = entity.getVideo_url();
         if (video_url != null) {
             stmt.bindString(5, video_url);
         }
@@ -112,8 +112,8 @@ public class FavoriteDao extends AbstractDao<Favorite, String> {
         entity.setToken(cursor.getString(offset + 0));
         entity.setTitle(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
         entity.setThumb(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
-        entity.setSourceUrl(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
-        entity.setVideoUrl(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
+        entity.setSource_url(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
+        entity.setVideo_url(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
         entity.setTime(cursor.getLong(offset + 5));
      }
     

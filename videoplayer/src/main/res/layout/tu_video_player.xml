@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <RelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/video_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/video_background_dark">
+        android:background="@color/primary_drawable_light">
 
         <FrameLayout
             android:id="@+id/textureview_container"
@@ -51,6 +51,20 @@
 
         </LinearLayout>
 
+        <com.stream.videoplayerlibrary.widget.SubtitleText
+            android:id="@+id/subtitle_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_margin="20dp"
+            android:gravity="center"
+            android:textColor="@color/primary_drawable_dark"
+            android:textSize="@dimen/text_little_small"
+            android:textStyle="bold"
+            app:strokeColor="@color/primary_drawable_light"
+            app:strokeWidth="3dp"/>
+
         <LinearLayout
             xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/video_bottom"
@@ -58,8 +72,8 @@
             android:layout_height="40dp"
             android:layout_alignParentBottom="true"
             android:orientation="horizontal"
-            android:layout_margin="16dip"
-            android:layout_marginRight="12dip">
+            android:layout_margin="16dp"
+            android:layout_marginRight="12dp">
 
             <TextView
                 android:text="00:00"

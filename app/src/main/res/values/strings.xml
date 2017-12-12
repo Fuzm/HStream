@@ -30,6 +30,12 @@
     <string name="gl_get_source_fail">Can not find the video source</string>
     <string name="source_no_found">source no find</string>
     <string name="source_loading">source loading</string>
+    <string name="list_menu_download">Download</string>
+    <string name="list_menu_subtitle">Subtitle</string>
+    <string name="list_menu_refresh">Refresh</string>
+
+    <!-- Subtitle -->
+    <string name="subtitle_text">Subtitle</string>
 
     <!-- Title for error alert when a video cannot be played.  it can be used by any app. -->
     <string name="VideoView_error_title">Video problem</string>
@@ -47,6 +53,7 @@
     <string name="menu_home">Home</string>
     <string name="menu_favorite">Favorite</string>
     <string name="menu_download">Download</string>
+    <string name="menu_release">Release Calendar</string>
 
     <!-- download -->
     <string name="ticket_download_info_add">Add Download</string>
@@ -69,6 +76,7 @@
     <!-- common -->
     <string name="common_delete">Delete</string>
     <string name="common_play">Play</string>
+    <string name="common_subtitle">Subtitle</string>
 
     <!-- Favorite -->
     <string name="no_favorite_info">Favorite items will be added here</string>

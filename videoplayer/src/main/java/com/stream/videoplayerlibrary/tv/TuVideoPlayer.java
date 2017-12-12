@@ -2,18 +2,18 @@ package com.stream.videoplayerlibrary.tv;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
-import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatImageView;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -24,27 +24,24 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.animation.RotateAnimation;
 import android.widget.*;
 
 import com.stream.videoplayerlibrary.R;
 import com.stream.videoplayerlibrary.common.FloatingPercentView;
 import com.stream.videoplayerlibrary.common.VideoUtils;
+import com.stream.videoplayerlibrary.widget.SubtitleText;
 
+import java.io.File;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Map;
-
-import master.flame.danmaku.danmaku.loader.android.DanmakuLoaderFactory;
-import master.flame.danmaku.danmaku.parser.BaseDanmakuParser;
-import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 /**
  * Created by Fuzm on 2017/4/19 0019.
  */
 
 public final class TuVideoPlayer extends FrameLayout
-        implements View.OnClickListener, View.OnTouchListener, VideoPlayer<IjkMediaPlayer>{
+        implements View.OnClickListener, View.OnTouchListener, VideoPlayer<ITuMediaPlayer>{
 
     private static final String TAG = TuVideoPlayer.class.getSimpleName();
 
@@ -79,7 +76,7 @@ public final class TuVideoPlayer extends FrameLayout
     private Formatter mFormatter;
 
     //private TuIjkMediaPlayerManager mManager;
-    private TuIjkMediaPlayerManager mManager;
+    private TuMediaPlayerManager mManager;
     private TuVideoPlayer mParentPlayer;
     private ViewGroup mTextureViewContainer;
     private AppCompatImageView mThumb;
@@ -99,8 +96,11 @@ public final class TuVideoPlayer extends FrameLayout
     private TextView mTimeText;
     private TextView mTotalText;
     private AppCompatImageView mScreenControlButton;
+    //subtitle
+    private SubtitleText mSubtitleText;
 
     private OnFavoriteListener mFavoriteListener;
+    private OnPreparedListener mPreParedListener;
 
     private final SeekBar.OnSeekBarChangeListener mSeekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
 
@@ -170,11 +170,11 @@ public final class TuVideoPlayer extends FrameLayout
                 postDelayed(this, MAX_PROGRESS - (mCurrentPosition % MAX_PROGRESS));
             }
 
-            //不再显示区内时，自动暂停
+            //不再显示区内时，自动停止
             if(!isShown() && mManager != null) {
                 Log.d(TAG, "frame not show, pause the video player");
                 //mManager.releaseMediaPlayer();
-                pause();
+                release(true);
             }
         }
     };
@@ -199,7 +199,7 @@ public final class TuVideoPlayer extends FrameLayout
 
         mContext = context;
         //mManager = TuIjkMediaPlayerManager.instance();
-        mManager = TuIjkMediaPlayerManager.instance();
+        mManager = TuMediaPlayerManager.instance();
 
         initView();
     }
@@ -233,6 +233,9 @@ public final class TuVideoPlayer extends FrameLayout
         mTotalText = (TextView) view.findViewById(R.id.total_time_text);
         mScreenControlButton = (AppCompatImageView) view.findViewById(R.id.screen_control);
 
+        //subtitle
+        mSubtitleText = (SubtitleText) view.findViewById(R.id.subtitle_text);
+
         mSeekBar.setMax(MAX_PROGRESS);
         mSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
         mScreenControlButton.setOnClickListener(this);
@@ -259,6 +262,7 @@ public final class TuVideoPlayer extends FrameLayout
         if(screenMode == MODE_NORMAL_SCREEN) {
             View view = LayoutInflater.from(mContext).inflate(R.layout.tu_video_player_normal_top, mVideoTop);
             mTextTitle = (TextView) view.findViewById(R.id.view_title);
+
         } else if(screenMode == MODE_FULL_SCREEN) {
             View view = LayoutInflater.from(mContext).inflate(R.layout.tu_video_player_fullscreen_top, mVideoTop);
             mTextTitle = (TextView) view.findViewById(R.id.view_title);
@@ -271,16 +275,49 @@ public final class TuVideoPlayer extends FrameLayout
 
             mGestureListener = new VideoGestureListener();
             mGestureDetector = new GestureDetector(mContext, mGestureListener);
+
+            //if full screen, set subtitle text size large
+            mSubtitleText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
         }
 
         setTitle(title);
         setCurrentStateAndUi(STATE_IDLE);
         mThumb.setImageDrawable(null);
-
     }
 
-    public void release() {
-        TuIjkMediaPlayerManager.releaseManager();
+    /**
+     * load subtitle
+     * @param file
+     */
+    public void loadSubtitle(File file) {
+        if(file != null && mSubtitleText != null) {
+            mSubtitleText.load(this, file);
+        }
+    }
+
+    /**
+     * load subtitle for path
+     * @param filePath
+     */
+    public void loadSubtitle(String filePath) {
+        File file = new File(filePath);
+        if(file.exists()) {
+            loadSubtitle(file);
+        }
+    }
+
+    /**
+     * load subtitle from assets dir
+     * @param assetsPath
+     */
+    public void loadSubtitleFromAssets(String assetsPath) {
+        if(!TextUtils.isEmpty(assetsPath)) {
+            mSubtitleText.load(this, assetsPath);
+        }
+    }
+
+    private void release(boolean clearState) {
+        mManager.release(clearState);
     }
 
     public void start() {
@@ -293,6 +330,10 @@ public final class TuVideoPlayer extends FrameLayout
         if(mManager != null) {
             mManager.pause();
         }
+    }
+
+    public void suspend() {
+        release(false);
     }
 
     public void setTitle(CharSequence title) {
@@ -313,6 +354,10 @@ public final class TuVideoPlayer extends FrameLayout
 
     public void seekTo(int posi) {
         mManager.seekTo(posi);
+    }
+
+    public String getVideoPath() {
+        return mUrl;
     }
 
     public void setVideoPath(String url) {
@@ -361,13 +406,14 @@ public final class TuVideoPlayer extends FrameLayout
 
     private void prepareMediaPlayer() {
         if(!checkPrepared()) return;
-        Log.d(TAG, "prepare mediaperl by instance-" + this.hashCode());
+        Log.d(TAG, "prepare mediaplayer by instance-" + this.hashCode());
 
-        TuIjkMediaPlayerManager.releaseManager(mManager.isCurrentVideoPlayer(this));
-        mManager.setVideoPath(mUrl, mHeaders);
+        //request audio
+        AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+
         mManager.setVideoPlayer(this);
-
-        TextureView textureView = TuIjkMediaPlayerManager.initTextureView(getContext());
+        TextureView textureView = mManager.openVideo(mContext, mUrl, mHeaders);
         addTextureView(textureView);
     }
 
@@ -408,7 +454,7 @@ public final class TuVideoPlayer extends FrameLayout
     }
 
     private boolean checkPrepared() {
-        return (mCurrentState == STATE_PREPARING &&
+        return (mCurrentState != STATE_IDLE &&
                 mUrl != null);
     }
 
@@ -481,9 +527,18 @@ public final class TuVideoPlayer extends FrameLayout
         }
     }
 
-    private void updateSrceenControlView(int mode){
+    /**
+     * update screen control button visibility
+     * @param mode
+     */
+    private void updateScreenControlView(int mode){
         if(mode == MODE_FULL_SCREEN) {
-            mScreenControlButton.setImageResource(R.drawable.ic_screen_normal);
+            if(mParentPlayer == null) {
+                //no parent player, can not change mode for normal
+                mScreenControlButton.setVisibility(GONE);
+            } else {
+                mScreenControlButton.setImageResource(R.drawable.ic_screen_normal);
+            }
         } else {
             mScreenControlButton.setImageResource(R.drawable.ic_screen_full);
         }
@@ -498,7 +553,7 @@ public final class TuVideoPlayer extends FrameLayout
         window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        mTextureViewContainer.removeView(TuIjkMediaPlayerManager.getCurrentTextureView());
+        mTextureViewContainer.removeView(mManager.getCurrentTextureView());
 
         ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -509,11 +564,18 @@ public final class TuVideoPlayer extends FrameLayout
         //fullPlayer.mCurrentScreenMode = MODE_FULL_SCREEN;
         fullPlayer.mParentPlayer = this;
         fullPlayer.setCurrentStateAndUi(mCurrentState);
-        fullPlayer.addTextureView(TuIjkMediaPlayerManager.getCurrentTextureView());
+        fullPlayer.addTextureView(mManager.getCurrentTextureView());
         fullPlayer.updatePlayButton();
-        fullPlayer.updateSrceenControlView(fullPlayer.mCurrentScreenMode);
+        fullPlayer.updateScreenControlView(fullPlayer.mCurrentScreenMode);
         fullPlayer.setThumb(mThumb.getDrawable());
         fullPlayer.setOnFavoriteListener(mFavoriteListener);
+
+        //load subtitle
+        if(mSubtitleText.getSubtitleFile() != null) {
+            fullPlayer.loadSubtitle(mSubtitleText.getSubtitleFile());
+        } else if(!TextUtils.isEmpty(mSubtitleText.getSubtitleAssetsPath())){
+            fullPlayer.loadSubtitleFromAssets(mSubtitleText.getSubtitleAssetsPath());
+        }
 
         mManager.setVideoPlayer(fullPlayer);
     }
@@ -529,12 +591,12 @@ public final class TuVideoPlayer extends FrameLayout
 
         ViewGroup parent = (ViewGroup) this.getParent();
         parent.removeView(this);
-        mTextureViewContainer.removeView(TuIjkMediaPlayerManager.getCurrentTextureView());
+        mTextureViewContainer.removeView(mManager.getCurrentTextureView());
 
-        mParentPlayer.addTextureView(TuIjkMediaPlayerManager.getCurrentTextureView());
+        mParentPlayer.addTextureView(mManager.getCurrentTextureView());
         mParentPlayer.setCurrentStateAndUi(mCurrentState);
         mParentPlayer.updatePlayButton();
-        mParentPlayer.updateSrceenControlView(mParentPlayer.mCurrentScreenMode);
+        mParentPlayer.updateScreenControlView(mParentPlayer.mCurrentScreenMode);
         mManager.setVideoPlayer(mParentPlayer);
     }
 
@@ -623,10 +685,14 @@ public final class TuVideoPlayer extends FrameLayout
     }
 
     @Override
-    public void onPrepared(IjkMediaPlayer mp) {
+    public void onPrepared(ITuMediaPlayer mp) {
         if(mCurrentState != STATE_PREPARING) {
             Log.d(TAG, "current state is not preparing, cannot play the video");
             return;
+        }
+
+        if(mPreParedListener != null) {
+            mPreParedListener.onPrepared(this);
         }
 
         if (mSeekWhenPrepared != 0) {
@@ -644,12 +710,12 @@ public final class TuVideoPlayer extends FrameLayout
     }
 
     @Override
-    public boolean onInfo(IjkMediaPlayer mp, int arg1, int arg2) {
+    public boolean onInfo(ITuMediaPlayer mp, int arg1, int arg2) {
         return false;
     }
 
     @Override
-    public void onBufferingUpdate(IjkMediaPlayer mp, int percent) {
+    public void onBufferingUpdate(ITuMediaPlayer mp, int percent) {
         //Log.d(TAG, "buffer percent: " + percent);
         mCurrentBufferPercentage = percent;
 
@@ -658,46 +724,57 @@ public final class TuVideoPlayer extends FrameLayout
     }
 
     @Override
-    public void onCompletion(IjkMediaPlayer mp) {
+    public void onCompletion(ITuMediaPlayer mp) {
         Log.d(TAG, "completion mp : " + mp.hashCode());
 
         if (mCurrentScreenMode == STATE_PLAYING) {
-            long position = mManager.getCurrentPosition();
-            VideoUtils.saveProgress(getContext(), mUrl, position);
+            VideoUtils.saveProgress(getContext(), mUrl, 0);
         }
 
-        //初始化状态
-        setCurrentStateAndUi(STATE_IDLE);
-    }
-
-    @Override
-    public boolean onError(IjkMediaPlayer mp, int what, int extra) {
-        //移除监听
+        //remove listener
         removeCallbacks(mBufferWait);
         removeCallbacks(mFateOut);
         removeCallbacks(mShowProgress);
-        //初始化状态
+        //init state
         setCurrentStateAndUi(STATE_IDLE);
+        //cancel subtitle view
+        mSubtitleText.cancel();
+
+        AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        am.abandonAudioFocus(null);
+    }
+
+    @Override
+    public boolean onError(ITuMediaPlayer mp, int what, int extra) {
+        release(true);
+
         Toast.makeText(mContext, "无法播放该视频", Toast.LENGTH_SHORT).show();
         return false;
     }
 
     @Override
-    public void onRelease() {
+    public void onRelease(boolean clearState) {
         Log.d(TAG, "release video player : " + this.hashCode());
         if (mCurrentState == STATE_PLAYING) {
             long position = mManager.getCurrentPosition();
             VideoUtils.saveProgress(getContext(), mUrl, position);
         }
 
-        //移除监听
+        //remove listener
         removeCallbacks(mBufferWait);
         removeCallbacks(mFateOut);
         removeCallbacks(mShowProgress);
-        //初始化状态
-        setCurrentStateAndUi(STATE_IDLE);
-        // 清理缓存变量
-        mTextureViewContainer.removeView(TuIjkMediaPlayerManager.getCurrentTextureView());
+        //init state
+        if(clearState) {
+            setCurrentStateAndUi(STATE_IDLE);
+        }
+        //clear view
+        mTextureViewContainer.removeView(mManager.getCurrentTextureView());
+        //cancel subtitle view
+        mSubtitleText.cancel();
+
+        AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        am.abandonAudioFocus(null);
     }
 
     @Override
@@ -710,17 +787,36 @@ public final class TuVideoPlayer extends FrameLayout
         return mCurrentScreenMode;
     }
 
+    @Override
+    public boolean isPlaying() {
+        if(mManager != null) {
+            return mManager.isPlaying();
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public long getCurrentPosition() {
+        if(mManager != null) {
+            return mManager.getCurrentPosition();
+        } else {
+            return 0;
+        }
+    }
+
     /**
      * 回退事件
      */
     public static boolean backPress() {
-        TuVideoPlayer player = (TuVideoPlayer) TuIjkMediaPlayerManager.instance().getVideoPlayer();
+        TuVideoPlayer player = (TuVideoPlayer) TuMediaPlayerManager.instance().getVideoPlayer();
         if(player != null) {
             if(player.getParentPlayer() != null) {
                 player.clearFullScreen();
                 return true;
             } else {
-                TuIjkMediaPlayerManager.releaseManager();
+                //TuIjkMediaPlayerManager.releaseManager();
+                player.release(true);
                 return false;
             }
         } else {
@@ -863,6 +959,19 @@ public final class TuVideoPlayer extends FrameLayout
         void onFavorite(String url);
     }
 
+    /**
+     * prepared listener
+     * @param listener
+     */
+    public void setOnPreParedListener(OnPreparedListener listener) {
+        mPreParedListener = listener;
+    }
+
+    public interface OnPreparedListener {
+
+        void onPrepared(VideoPlayer videoPlayer);
+    }
+
     public static class FullScreenListener implements SensorEventListener {
 
         private long lastAutoFullscreenTime;
@@ -885,8 +994,8 @@ public final class TuVideoPlayer extends FrameLayout
 
         @Override
         public void onSensorChanged(SensorEvent event) {
-            if(TuIjkMediaPlayerManager.getManager() != null) {
-                VideoPlayer videoPlayer = TuIjkMediaPlayerManager.getManager().getVideoPlayer();
+            if(TuMediaPlayerManager.instance() != null) {
+                VideoPlayer videoPlayer = TuMediaPlayerManager.instance().getVideoPlayer();
                 if(videoPlayer != null && videoPlayer.getCurrentScreenMode() == MODE_FULL_SCREEN) {
                     final float x = event.values[SensorManager.DATA_X];
                     float y = event.values[SensorManager.DATA_Y];
@@ -921,5 +1030,6 @@ public final class TuVideoPlayer extends FrameLayout
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
         }
     }
+
 
 }

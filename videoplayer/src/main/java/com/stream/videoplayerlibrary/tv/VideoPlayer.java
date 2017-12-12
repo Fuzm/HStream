@@ -20,9 +20,13 @@ public interface VideoPlayer<E> {
 
     boolean onError(E mp, int what, int extra);
 
-    void onRelease();
+    void onRelease(boolean clearState);
 
     VideoPlayer getParentPlayer();
 
     int getCurrentScreenMode();
+
+    boolean isPlaying();
+
+    long getCurrentPosition();
 }

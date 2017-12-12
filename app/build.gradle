@@ -1,33 +1,39 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
     defaultConfig {
         applicationId "com.stream.hstream"
-        minSdkVersion 16
-        targetSdkVersion 25
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
         vectorDrawables.useSupportLibrary = true
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable false
         }
     }
+
     sourceSets {
         main {
             java.srcDirs += 'src/main/java-gen'
         }
     }
+
+    productFlavors {
+
+    }
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile project(':videoplayer')
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
@@ -46,11 +52,12 @@ dependencies {
     compile 'org.greenrobot:greendao:2.2.0'
     compile 'com.loopj.android:android-async-http:1.4.9'
     compile 'com.daimajia.swipelayout:library:1.2.0'
-    compile 'com.danikula:videocache:2.7.0'
-
+    //compile 'com.danikula:videocache:2.7.0'
     compile 'me.weyye.ColorTrackTabLayout:library:1.0.1'
     compile 'com.flyco.tablayout:FlycoTabLayout_Lib:2.1.2@aar'
-
     //compile 'com.facebook.stetho:stetho:1.4.1'
     //compile 'com.facebook.stetho:stetho-okhttp3:1.4.1'
+    compile project(':videocache')
+    compile project(':videoplayer')
+    compile project(':calendarview')
 }

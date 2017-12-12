@@ -2,7 +2,6 @@ package com.stream.hstream.fragments.tab;
 
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -23,7 +22,6 @@ import com.stream.client.HsRequest;
 import com.stream.client.data.ListUrlBuilder;
 import com.stream.client.data.VideoInfo;
 import com.stream.client.parser.VideoListParser;
-import com.stream.download.DownloadService;
 import com.stream.drawable.AddDeleteDrawable;
 import com.stream.enums.GenreEnum;
 import com.stream.hstream.HStreamApplication;
@@ -31,7 +29,7 @@ import com.stream.client.HsCallback;
 import com.stream.hstream.R;
 import com.stream.scene.SceneFragment;
 import com.stream.util.AppHelper;
-import com.stream.videoplayerlibrary.tv.TuIjkMediaPlayerManager;
+import com.stream.videoplayerlibrary.tv.TuMediaPlayerManager;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 import com.stream.widget.ContentLayout;
 import com.stream.widget.EditTextDialogBuilder;
@@ -44,7 +42,7 @@ import junit.framework.Assert;
  * Created by Seven-one on 2017/9/26.
  */
 
-public class ListFragment extends SceneFragment implements EasyRecyclerView.OnItemClickListener,
+public class ListFragment extends SceneFragment implements
         FabLayout.OnClickFabListener, FabLayout.OnExpandListener {
 
     /**
@@ -126,7 +124,7 @@ public class ListFragment extends SceneFragment implements EasyRecyclerView.OnIt
     private void onRestore(Bundle savedInstanceState) {
         mHasFirstRefresh = savedInstanceState.getBoolean(KEY_HAS_FIRST_REFRESH);
         mUrlBuilder = savedInstanceState.getParcelable(KEY_LIST_URL_BUILDER);
-        mGenreEnum = savedInstanceState.getParcelable(KEY_GENER_ENUM);
+        mGenreEnum = (GenreEnum) savedInstanceState.getSerializable(KEY_GENER_ENUM);
     }
 
     @Override
@@ -166,7 +164,7 @@ public class ListFragment extends SceneFragment implements EasyRecyclerView.OnIt
         mRecyclerView.setDrawSelectorOnTop(true);
         mRecyclerView.hasFixedSize();
         mRecyclerView.setClipToPadding(false);
-        mRecyclerView.setOnItemClickListener(this);
+        //mRecyclerView.setOnItemClickListener(this);
 
         mFabLayout = (FabLayout) view.findViewById(R.id.fab_layout);
         mFabLayout.setAutoCancel(true);
@@ -199,22 +197,6 @@ public class ListFragment extends SceneFragment implements EasyRecyclerView.OnIt
 
     private void onGetVideoListFail(int taskId, Exception e) {
         mHelper.onGetException(taskId, e);
-    }
-
-    @Override
-    public boolean onItemClick(EasyRecyclerView parent, View view, int position, long id) {
-        if (null == mHelper || null == mRecyclerView) {
-            return false;
-        }
-
-        VideoInfo videoInfo = mHelper.getDataAt(position);
-        if(view.getId() == R.id.download_button) {
-            Intent intent = new Intent(getActivity(), DownloadService.class);
-            intent.putExtra(DownloadService.KEY_VIDEO_INFO, videoInfo);
-            getActivity().startService(intent);
-        }
-
-        return true;
     }
 
     @Override
@@ -357,17 +339,6 @@ public class ListFragment extends SceneFragment implements EasyRecyclerView.OnIt
         public int getItemCount() {
             return null != mHelper ? mHelper.size() : 0;
         }
-
-        @Override
-        public void onItemClick(View view, int position) {
-            VideoInfo videoInfo = mHelper.getDataAt(position);
-            if(view.getId() == R.id.download_button) {
-                Intent intent = new Intent(getActivity(), DownloadService.class);
-                intent.setAction(DownloadService.ACTION_START);
-                intent.putExtra(DownloadService.KEY_VIDEO_INFO, videoInfo);
-                getActivity().startService(intent);
-            }
-        }
     }
 
     public class VideoListListener extends HsCallback<ListFragment, VideoListParser.Result> {
@@ -399,7 +370,7 @@ public class ListFragment extends SceneFragment implements EasyRecyclerView.OnIt
     public void onDestroy() {
         super.onDestroy();
 
-        TuIjkMediaPlayerManager.releaseManager();
+        TuMediaPlayerManager.releaseManager();
         mFullScreenListener.unregistetListener();
 
         if(mClient != null) {

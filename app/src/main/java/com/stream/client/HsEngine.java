@@ -4,10 +4,12 @@ import android.util.Log;
 import android.widget.VideoView;
 
 import com.stream.client.data.VideoSourceInfo;
+import com.stream.client.parser.ReleaseInfoParser;
 import com.stream.client.parser.VideoListParser;
 import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoUrlParser;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -131,6 +133,45 @@ public class HsEngine {
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
+        }
+
+        return result;
+    }
+
+    /**
+     * get release info by url
+     * @param task
+     * @param okHttpClient
+     * @param url
+     * @throws Exception
+     */
+    public static ReleaseInfoParser.Result getReleaseInfo(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
+        Log.d(TAG, "get release info url by " + url);
+
+        Request request = new EhRequestBuilder(url).addHeader("Connection", "close").build();
+        Call call = okHttpClient.newCall(request);
+
+        if (task != null) {
+            task.setCall(call);
+        }
+
+        InputStream inputStream = null;
+        Headers headers = null;
+        int code = -1;
+        ReleaseInfoParser.Result result = null;
+
+        try {
+            Response response = call.execute();
+            inputStream = response.body().byteStream();
+
+            result = ReleaseInfoParser.parse(inputStream);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            if(inputStream != null) {
+                inputStream.close();
+            }
         }
 
         return result;

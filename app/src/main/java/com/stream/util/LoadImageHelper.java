@@ -1,7 +1,10 @@
 package com.stream.util;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.nfc.Tag;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -14,7 +17,9 @@ import com.hippo.conaco.Unikery;
 import com.hippo.image.Image;
 import com.hippo.image.ImageBitmap;
 import com.hippo.image.ImageDrawable;
+import com.stream.drawable.PreciselyClipDrawable;
 import com.stream.hstream.HStreamApplication;
+import com.stream.hstream.R;
 
 /**
  * Created by Fuzm on 2017/4/14 0014.
@@ -46,7 +51,8 @@ public class LoadImageHelper {
                 .setKey(key)
                 .setUrl(url)
                 .setDataContainer(null)
-                .setUseNetwork(true);
+                .setUseNetwork(true)
+                .setUseMemoryCache(false);
         mConaco.load(builder);
         return this;
     }
@@ -61,7 +67,39 @@ public class LoadImageHelper {
 
     public void cancel() {
         mConaco.cancel(mUnikery);
+        mDrawable = null;
+        mImageView = null;
     }
+
+    private ImageDrawable getImageDrawable() {
+        Drawable drawable = mImageView.getDrawable();
+        if (drawable instanceof TransitionDrawable) {
+            TransitionDrawable transitionDrawable = (TransitionDrawable) drawable;
+            if (transitionDrawable.getNumberOfLayers() == 2) {
+                drawable = transitionDrawable.getDrawable(1);
+            }
+        }
+        if (drawable instanceof PreciselyClipDrawable) {
+            drawable = ((PreciselyClipDrawable) drawable).getWrappedDrawable();
+        }
+        if (drawable instanceof ImageDrawable) {
+            return (ImageDrawable) drawable;
+        } else {
+            return null;
+        }
+    }
+
+    private void clearDrawable() {
+        // Recycle ImageDrawable
+        ImageDrawable imageDrawable = getImageDrawable();
+        if (imageDrawable != null) {
+            imageDrawable.recycle();
+        }
+
+        // Set drawable null
+        mImageView.setImageDrawable(null);
+    }
+
 
     private class HelperUnikery implements Unikery<ImageBitmap> {
 
@@ -107,23 +145,36 @@ public class LoadImageHelper {
                 return false;
             }
 
-            if (null != drawable) {
-                if (mImageView != null) {
-                    mImageView.setImageDrawable(drawable);
-                }
-                mDrawable = drawable;
+            clearDrawable();
+
+            if ((source == Conaco.SOURCE_DISK || source == Conaco.SOURCE_NETWORK) && mImageView.isShown()) {
+                Drawable[] layers = new Drawable[2];
+                layers[0] = new ColorDrawable(Color.TRANSPARENT);
+                layers[1] = drawable;
+                TransitionDrawable transitionDrawable = new TransitionDrawable(layers);
+                mImageView.setImageDrawable(transitionDrawable);
+                transitionDrawable.startTransition(300);
+            } else {
+                mImageView.setImageDrawable(drawable);
             }
+
+            mDrawable = drawable;
             return true;
         }
 
         @Override
         public void onFailure() {
             Log.d(TAG, "Task id: " + mTaskId + " failure");
+            clearDrawable();
+            mDrawable = null;
+            mImageView = null;
         }
 
         @Override
         public void onCancel() {
             Log.d(TAG, "Task id: " + mTaskId + " cancel");
+            mDrawable = null;
+            mImageView = null;
         }
     }
 }

@@ -28,8 +28,9 @@ public class DownloadDao extends AbstractDao<DownloadInfo, String> {
         public final static Property Thumb = new Property(2, String.class, "thumb", false, "THUMB");
         public final static Property Source_url = new Property(3, String.class, "source_url", false, "SOURCE_URL");
         public final static Property Url = new Property(4, String.class, "url", false, "URL");
-        public final static Property State = new Property(5, int.class, "state", false, "STATE");
-        public final static Property Time = new Property(6, long.class, "time", false, "TIME");
+        public final static Property Alternative_name = new Property(5, String.class, "alternative_name", false, "ALTERNATIVE_NAME");
+        public final static Property State = new Property(6, int.class, "state", false, "STATE");
+        public final static Property Time = new Property(7, long.class, "time", false, "TIME");
     };
 
 
@@ -50,8 +51,9 @@ public class DownloadDao extends AbstractDao<DownloadInfo, String> {
                 "\"THUMB\" TEXT," + // 2: thumb
                 "\"SOURCE_URL\" TEXT," + // 3: source_url
                 "\"URL\" TEXT," + // 4: url
-                "\"STATE\" INTEGER NOT NULL ," + // 5: state
-                "\"TIME\" INTEGER NOT NULL );"); // 6: time
+                "\"ALTERNATIVE_NAME\" TEXT," + // 5: alternative_name
+                "\"STATE\" INTEGER NOT NULL ," + // 6: state
+                "\"TIME\" INTEGER NOT NULL );"); // 7: time
     }
 
     /** Drops the underlying database table. */
@@ -76,7 +78,7 @@ public class DownloadDao extends AbstractDao<DownloadInfo, String> {
             stmt.bindString(3, thumb);
         }
  
-        String source_url = entity.getSourceUrl();
+        String source_url = entity.getSource_url();
         if (source_url != null) {
             stmt.bindString(4, source_url);
         }
@@ -85,8 +87,13 @@ public class DownloadDao extends AbstractDao<DownloadInfo, String> {
         if (url != null) {
             stmt.bindString(5, url);
         }
-        stmt.bindLong(6, entity.getState());
-        stmt.bindLong(7, entity.getTime());
+ 
+        String alternative_name = entity.getAlternative_name();
+        if (alternative_name != null) {
+            stmt.bindString(6, alternative_name);
+        }
+        stmt.bindLong(7, entity.getState());
+        stmt.bindLong(8, entity.getTime());
     }
 
     /** @inheritdoc */
@@ -104,8 +111,9 @@ public class DownloadDao extends AbstractDao<DownloadInfo, String> {
             cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2), // thumb
             cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3), // source_url
             cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4), // url
-            cursor.getInt(offset + 5), // state
-            cursor.getLong(offset + 6) // time
+            cursor.isNull(offset + 5) ? null : cursor.getString(offset + 5), // alternative_name
+            cursor.getInt(offset + 6), // state
+            cursor.getLong(offset + 7) // time
         );
         return entity;
     }
@@ -116,10 +124,11 @@ public class DownloadDao extends AbstractDao<DownloadInfo, String> {
         entity.setToken(cursor.getString(offset + 0));
         entity.setTitle(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
         entity.setThumb(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
-        entity.setSourceUrl(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
+        entity.setSource_url(cursor.isNull(offset + 3) ? null : cursor.getString(offset + 3));
         entity.setUrl(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
-        entity.setState(cursor.getInt(offset + 5));
-        entity.setTime(cursor.getLong(offset + 6));
+        entity.setAlternative_name(cursor.isNull(offset + 5) ? null : cursor.getString(offset + 5));
+        entity.setState(cursor.getInt(offset + 6));
+        entity.setTime(cursor.getLong(offset + 7));
      }
     
     /** @inheritdoc */

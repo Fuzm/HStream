@@ -17,6 +17,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -81,6 +82,9 @@ public class DownloadQueen {
         if(TextUtils.isEmpty(filename)) {
             throw new NullPointerException("filename is null");
         }
+        if(TextUtils.isEmpty(fileurl)) {
+            throw new NullPointerException("fileurl is null");
+        }
         return new WorkInfo(filename, fileurl);
     }
 
@@ -93,10 +97,8 @@ public class DownloadQueen {
     }
 
     public void regiesteWork(WorkInfo info) {
-        if(null != info && info.getFileUrl() != null) {
-            synchronized (mWorkInfoLinkedList) {
-                mWorkInfoLinkedList.add(info);
-            }
+        synchronized (mWorkInfoLinkedList) {
+            mWorkInfoLinkedList.add(info);
         }
     }
 
@@ -186,6 +188,8 @@ public class DownloadQueen {
 
     private class Worker implements Runnable {
 
+        private int retry_num = 0;
+
         @Override
         public void run() {
             //loop execute, util the condition
@@ -198,43 +202,72 @@ public class DownloadQueen {
 
         public boolean runInternal(){
             Log.d(TAG, "start download by thread-" + this.hashCode());
-            InputStream inputStream = null;
-            RandomAccessFile accessFile = null;
             WorkInfo workInfo = null;
             try {
                 synchronized (mWorkInfoLinkedList) {
                     workInfo = mWorkInfoLinkedList.poll();
                 }
 
-                if(workInfo == null) {
+                if (workInfo == null) {
                     return false;
                 }
 
                 notifyStart(workInfo);
 
                 //synchronized (mExecuteWorkMap) {
-                    mExecuteWorkMap.put(workInfo.getWId(), workInfo);
+                mExecuteWorkMap.put(workInfo.getWId(), workInfo);
                 //}
 
+                retry_num = 3;
+                //retry num large then 0 and runDownload return true
+                while (retry_num > 0 && !runDownload(workInfo));
+
                 //thread interrupte, stop thread
-                if(Thread.currentThread().isInterrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     Log.d(TAG, "downloader task stop");
                     return false;
                 }
 
                 //stop current work
                 synchronized (mInterruptedList) {
-                    if(mInterruptedList.contains(workInfo.getWId())) {
+                    if (mInterruptedList.contains(workInfo.getWId())) {
                         return true;
                     }
                 }
 
+                //finish work
+                notifyDownloadFinish(workInfo);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.d(TAG, workInfo.getFileName() + " download failure, maybe interrupte: " + e.getMessage());
+                notifyDownloadFail(workInfo, "error");
+            } finally {
+                if(workInfo != null) {
+                    //synchronized (mExecuteWorkMap) {
+                        mExecuteWorkMap.remove(workInfo.getWId());
+                    //}
+
+                    synchronized (mInterruptedList) {
+                        mInterruptedList.remove(workInfo.getWId());
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private boolean runDownload(WorkInfo workInfo) throws Exception{
+            InputStream inputStream = null;
+            RandomAccessFile accessFile = null;
+
+            try {
                 Request.Builder builder = new EhRequestBuilder(workInfo.getFileUrl()).addHeader("Connection", "close");
 
                 long finishSize = 0;
                 String filePath = DownloadUtil.getFilePath(workInfo.getFileName());
                 accessFile = new RandomAccessFile(filePath, "rw");
-                if(accessFile.length() > 0) {
+                if (accessFile.length() > 0) {
                     finishSize = accessFile.length();
                     accessFile.seek(finishSize);
                     builder.addHeader("Range", "bytes=" + finishSize + "-");
@@ -243,11 +276,11 @@ public class DownloadQueen {
                 Call call = mHttpClient.newCall(builder.build());
                 Response response = call.execute();
 
-                if(response.code() == 410) {
+                if (response.code() == 410) {
                     builder.removeHeader("Range");
                 }
 
-                if(response.code()/100 != 2) {
+                if (response.code() / 100 != 2) {
                     Log.d(TAG, "cannot get the source by response code: " + response.code());
                     if (response.code() == 410) {
                         notifyDownload410(workInfo);
@@ -260,9 +293,9 @@ public class DownloadQueen {
 
                 String extension = response.body().contentType().subtype();
                 long contentLength = response.body().contentLength();
-                Log.d(TAG,"already download size: " + finishSize);
-                Log.d(TAG,"content lenght :" + contentLength);
-                if(contentLength == finishSize) {
+                Log.d(TAG, "already download size: " + finishSize);
+                Log.d(TAG, "content lenght :" + contentLength);
+                if (contentLength == finishSize) {
                     //file already download complete; but the condition is imprecisely;
                     notifyDownloadFinish(workInfo);
                     return true;
@@ -271,7 +304,7 @@ public class DownloadQueen {
                 }
 
                 //check extension
-                if(!DownloadUtil.checkExtension(extension)) {
+                if (!DownloadUtil.checkExtension(extension)) {
                     response.body().close();
                     String errorMsg = "don't support this video type, error type: " + extension;
                     notifyDownloadFail(workInfo, errorMsg);
@@ -279,14 +312,14 @@ public class DownloadQueen {
                 }
 
                 //thread interrupte, stop thread
-                if(Thread.currentThread().isInterrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     Log.d(TAG, "downloader task stop");
-                    return false;
+                    return true;
                 }
 
                 //stop current work
                 synchronized (mInterruptedList) {
-                    if(mInterruptedList.contains(workInfo.getWId())) {
+                    if (mInterruptedList.contains(workInfo.getWId())) {
                         return true;
                     }
                 }
@@ -294,21 +327,21 @@ public class DownloadQueen {
                 inputStream = response.body().byteStream();
                 int byteRead = 0;
                 byte[] data = new byte[1024 * 4];
-                while((byteRead = inputStream.read(data)) != -1) {
+                while ((byteRead = inputStream.read(data)) != -1) {
                     //Log.d(TAG, "read by one size: " + byteRead);
                     accessFile.write(data, 0, byteRead);
                     finishSize += byteRead;
 
                     notifyDownloading(workInfo, contentLength, finishSize, byteRead);
 
-                    if(Thread.currentThread().isInterrupted()) {
+                    if (Thread.currentThread().isInterrupted()) {
                         Log.d(TAG, "worker stop");
-                        return false;
+                        return true;
                     }
 
                     //stop current work
                     synchronized (mInterruptedList) {
-                        if(mInterruptedList.contains(workInfo.getWId())) {
+                        if (mInterruptedList.contains(workInfo.getWId())) {
                             return true;
                         }
                     }
@@ -316,11 +349,12 @@ public class DownloadQueen {
 
                 //finish work
                 notifyDownloadFinish(workInfo);
-
-            } catch (Exception e) {
+            } catch (SocketTimeoutException e) {
                 e.printStackTrace();
-                Log.d(TAG, workInfo.getFileName() + " download failure, maybe interrupte: " + e.getMessage());
-                notifyDownloadFail(workInfo, "error");
+                if(retry_num != 0) {
+                    retry_num--;
+                    return false;
+                }
             } finally {
                 if(inputStream != null) {
                     try {
@@ -337,26 +371,10 @@ public class DownloadQueen {
                         e.printStackTrace();
                     }
                 }
-
-                if(workInfo != null) {
-                    //synchronized (mExecuteWorkMap) {
-                        mExecuteWorkMap.remove(workInfo.getWId());
-                    //}
-
-                    synchronized (mInterruptedList) {
-                        mInterruptedList.remove(workInfo.getWId());
-                    }
-                }
             }
 
-            return false;
+            return true;
         }
-    }
-
-    private static class TempInfo {
-
-        private String token;
-        private long contentLength;
     }
 
     public static final class WorkInfo {

@@ -32,6 +32,18 @@ public class StringUtils {
         return Long.parseLong(sb.toString());
     }
 
+    /**
+     * clear all white space
+     * @param str
+     */
+    public static String clearWhiteSpace(String str) {
+        if(str != null) {
+            str = str.replaceAll(" ", "");
+        }
+
+        return str;
+    }
+
     public static void main(String[] args) {
         System.out.println(StringUtils.createToken("测试"));
     }

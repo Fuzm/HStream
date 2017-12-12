@@ -1,72 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:orientation="vertical"
               android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              >
+              android:layout_height="wrap_content">
 
-    <FrameLayout
+    <com.stream.videoplayerlibrary.tv.TuVideoPlayer
+        android:id="@+id/list_video_player"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.stream.videoplayerlibrary.tv.TuVideoPlayer
-            android:id="@+id/list_video_player"
-            android:layout_width="match_parent"
-            android:layout_height="230dp" />
-
-        <android.support.v7.widget.AppCompatTextView
-            android:id="@+id/message_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/primary_drawable_dark"
-            android:layout_margin="5dp"
-            android:layout_gravity="bottom"/>
-
-    </FrameLayout>
+        android:layout_height="230dp" />
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:padding="5dp">
 
-        <FrameLayout
-            android:id="@+id/source_info"
-            android:layout_width="wrap_content"
+        <!--<android.support.v7.widget.AppCompatImageView-->
+            <!--android:id="@+id/download_button"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_centerVertical="true"-->
+            <!--app:srcCompat="@drawable/ic_action_download"/>-->
+
+        <android.support.v7.widget.AppCompatTextView
+            android:id="@+id/offering_date"
+            android:layout_width="130dp"
             android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:gravity="start|center_vertical">
-
-            <android.support.v7.widget.AppCompatTextView
-                android:id="@+id/load_message"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/source_loading" />
-
-            <Spinner
-                android:id="@+id/source_spinner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:spinnerMode="dialog"
-                android:visibility="gone" />
-        </FrameLayout>
-
-        <android.support.v7.widget.AppCompatImageView
-            android:id="@+id/refresh_button"
-            app:srcCompat="@drawable/ic_action_refresh"
-            android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:layout_toRightOf="@id/source_info"
+            android:layout_margin="12dp"
+            android:maxLines="1"
+            android:singleLine="true"
             android:layout_centerVertical="true"/>
 
-        <android.support.v7.widget.AppCompatImageView
-            android:id="@+id/download_button"
+        <!--<TextView-->
+            <!--android:id="@+id/subtitle_button"-->
+            <!--android:text="@string/subtitle_text"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_margin="6dp"-->
+            <!--android:layout_toLeftOf="@+id/source_info"-->
+            <!--android:background="@drawable/ic_rectangle_text_light"-->
+            <!--android:textSize="@dimen/text_little_small"-->
+            <!--android:layout_centerVertical="true"/>-->
+
+        <android.support.v7.widget.AppCompatTextView
+            android:id="@+id/load_message"
             android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            app:srcCompat="@drawable/ic_action_download"
+            android:layout_height="wrap_content"
+            android:text="@string/source_loading"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/menu_button"/>
+
+        <Spinner
+            android:id="@+id/source_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:spinnerMode="dialog"
+            android:visibility="gone"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/menu_button"/>
+
+        <!--<android.support.v7.widget.AppCompatImageView-->
+            <!--android:id="@+id/refresh_button"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_alignParentEnd="true"-->
+            <!--android:layout_alignParentRight="true"-->
+            <!--android:layout_centerVertical="true"-->
+            <!--app:srcCompat="@drawable/ic_action_refresh" />-->
+
+        <Button
+            android:id="@+id/menu_button"
+            android:layout_width="36dp"
+            android:layout_height="match_parent"
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
-            android:layout_centerInParent="true"/>
+            android:layout_centerVertical="true"
+            android:background="@null"
+            android:text="···"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
     </RelativeLayout>
 

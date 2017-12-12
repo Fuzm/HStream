@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="2dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="32dp">
+
+            <ImageView
+                android:id="@+id/search_back"
+                android:layout_width="32dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical"
+                app:srcCompat="@drawable/ic_search_back_black_24dp" />
+
+            <com.stream.widget.DrawableSearchEditText
+                android:id="@+id/drawable_search_edit_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp"
+                android:layout_marginLeft="32dp"
+                android:layout_marginRight="48dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:background="@null"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:textSize="@dimen/text_little_small"/>
+
+            <TextView
+                android:id="@+id/search_action"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|end"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:text="搜索"
+                android:textColor="@color/grey_500"
+                android:textSize="@dimen/text_little_small"
+                android:gravity="center"/>
+
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/list_container"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/primary_drawable_dark"
+            android:visibility="gone">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@color/divider"/>
+
+                <ListView
+                    android:id="@+id/search_bar_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="@color/divider"
+                    android:dividerHeight="1dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</merge>

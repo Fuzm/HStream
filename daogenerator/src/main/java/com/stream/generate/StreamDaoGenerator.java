@@ -21,12 +21,26 @@ public class StreamDaoGenerator {
         outDir.mkdirs();
 
         Schema schema = new Schema(VERSION, PACKAGE);
+        addDetailInfo(schema);
         addSourceInfo(schema);
         addDownloads(schema);
         addFavorites(schema);
         addSuggestions(schema);
 
         new DaoGenerator( ).generateAll(schema, OUT_DIR);
+    }
+
+    private static void addDetailInfo(Schema schema) {
+        Entity entity = schema.addEntity("DetailInfo");
+        entity.setTableName("hs_detail_info");
+        entity.setClassNameDao("DetailDao");
+
+        entity.addStringProperty("token").primaryKey();
+        entity.addStringProperty("video_title").notNull();
+        entity.addStringProperty("alternative_name");
+        entity.addStringProperty("offering_date");
+        entity.addStringProperty("subtitle_path");
+        entity.addStringProperty("detail_url");
     }
 
     private static void addSourceInfo(Schema schema) {
@@ -53,6 +67,7 @@ public class StreamDaoGenerator {
         entity.addStringProperty("thumb");
         entity.addStringProperty("source_url");
         entity.addStringProperty("url");
+        entity.addStringProperty("alternative_name");
         //entity.addDoubleProperty("content_length");
         //entity.addFloatProperty("rating");
         entity.addIntProperty("state").notNull();

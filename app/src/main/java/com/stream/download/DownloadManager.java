@@ -3,30 +3,17 @@ package com.stream.download;
 import android.content.Context;
 import android.util.Log;
 import android.util.SparseArray;
-import android.widget.Toast;
 
 import com.hippo.yorozuya.MathUtils;
 import com.hippo.yorozuya.SimpleHandler;
 import com.hippo.yorozuya.collect.SparseJLArray;
-import com.stream.client.HsClient;
-import com.stream.client.HsRequest;
-import com.stream.client.data.VideoInfo;
-import com.stream.client.data.VideoSourceInfo;
-import com.stream.client.parser.VideoSourceParser;
+import com.stream.dao.DetailInfo;
 import com.stream.dao.DownloadInfo;
 import com.stream.hstream.HStreamApplication;
 import com.stream.hstream.HStreamDB;
-import com.stream.hstream.R;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.OkHttpClient;
 
 /**
  * Created by Fuzm on 2017/5/3 0003.
@@ -44,21 +31,18 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
     public static final int STATE_FAILED = 4;
 
     private Context mContext;
-    private HsClient mClient;
     private DownloadListener mDownloadListener;
     private DownloadInfoListener mDownloadInfoListener;
 
     private final SparseJLArray<DownloadQueen.WorkInfo> mWorkInfoMap = new SparseJLArray();
-    private final SparseJLArray<DownloadInfo> mDownloadInfoMap = new SparseJLArray();
-    private final SparseJLArray<HsRequest> mRequestMap = new SparseJLArray<>();
-    private final LinkedList<DownloadInfo> mDefaultList;
+    private final SparseJLArray<DownloadDetail> mDownloadDetailMap = new SparseJLArray();
+    private final LinkedList<DownloadDetail> mDefaultList;
 
     private SpeedReminder mSpeedReminder;
     private DownloadQueen mDownloadQueen;
 
     public DownloadManager(Context context) {
         mContext = context;
-        mClient = HStreamApplication.getHsClient(mContext);
 
         mDownloadQueen = DownloadQueen.obtainQueen(HStreamApplication.getOkHttpClient(mContext));
         mDownloadQueen.setDownloadWorkListener(this);
@@ -75,23 +59,23 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
 
             DownloadQueen.WorkInfo workInfo = DownloadQueen.buildWork(info.getTitle(), info.getUrl());
             //workInfo.setOnDownLoaderListener(this);
-
-            mDownloadInfoMap.put(workInfo.getWId(), info);
+            DownloadDetail detail = new DownloadDetail(info);
+            mDownloadDetailMap.put(workInfo.getWId(), detail);
             mWorkInfoMap.put(workInfo.getWId(), workInfo);
-            mDefaultList.add(info);
+            mDefaultList.add(detail);
         }
 
         mSpeedReminder = new SpeedReminder();
     }
 
-    public List<DownloadInfo> getDownloadInfoList() {
+    public List<DownloadDetail> getDownloadInfoList() {
         return mDefaultList;
     }
 
     private DownloadQueen.WorkInfo getWorkByToken(String token) {
-        for(int i = 0; i < mDownloadInfoMap.size(); i++) {
+        for(int i = 0; i < mDownloadDetailMap.size(); i++) {
             long workId = mWorkInfoMap.keyAt(i);
-            DownloadInfo info = mDownloadInfoMap.get(workId);
+            DownloadDetail info = mDownloadDetailMap.get(workId);
             if(token.equals(info.getToken())) {
                 return mWorkInfoMap.get(workId);
             }
@@ -99,76 +83,59 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
         return null;
     }
 
-    public void startDownload(VideoInfo videoInfo) {
-        if(videoInfo.url != null) {
-            DownloadInfo info = null;
-            DownloadQueen.WorkInfo workInfo = getWorkByToken(videoInfo.token);
+    public void startDownload(DownloadDetail param) {
+        if(param.getDownloadUrl() != null) {
+            DownloadDetail detailInfo = null;
+            DownloadQueen.WorkInfo workInfo = getWorkByToken(param.getToken());
             if(workInfo != null) {
-                info = mDownloadInfoMap.get(workInfo.getWId());
+                detailInfo = mDownloadDetailMap.get(workInfo.getWId());
 
                 if(mDownloadInfoListener != null) {
-                    mDownloadInfoListener.onUpdate(info);
+                    mDownloadInfoListener.onUpdate(detailInfo);
                 }
 
             } else {
-                info = new DownloadInfo();
-                info.setToken(videoInfo.token);
-                info.setTitle(videoInfo.title);
-                info.setThumb(videoInfo.thumb);
-                info.setSourceUrl(videoInfo.url);
-                //info.setUrl(url);
+                //add to database for download info
+                DownloadInfo info = new DownloadInfo();
+                info.setToken(param.getToken());
+                info.setTitle(param.getTitle());
+                info.setThumb(param.getThumb());
+                info.setUrl(param.getDownloadUrl());
+                info.setAlternative_name(param.getAlternativeName());
                 info.setTime(System.currentTimeMillis());
                 info.setState(STATE_WAIT);
-
                 HStreamDB.putDownloadInfo(info);
 
-                workInfo = DownloadQueen.buildWork(info.getTitle(), null);
-
-                mDownloadInfoMap.put(workInfo.getWId(), info);
+                //build work info for download
+                detailInfo = new DownloadDetail(param);
+                detailInfo.setState(STATE_WAIT);
+                workInfo = DownloadQueen.buildWork(detailInfo.getTitle(), detailInfo.getDownloadUrl());
                 mWorkInfoMap.put(workInfo.getWId(), workInfo);
-                mDefaultList.add(info);
+                mDownloadDetailMap.put(workInfo.getWId(), detailInfo);
+                mDefaultList.add(detailInfo);
             }
 
-            if(info.getUrl() != null && info.getUrl().length() > 0) {
-                start(workInfo.getWId());
-            } else {
-                requireDonwloadSource(workInfo.getWId(), info.getSourceUrl());
-            }
+            start(workInfo.getWId());
 
             if(mDownloadInfoListener != null) {
-                mDownloadInfoListener.onAdd(info);
+                mDownloadInfoListener.onAdd(detailInfo);
             }
 
             if(mDownloadListener != null) {
-                mDownloadListener.onStart(info);
+                mDownloadListener.onStart(detailInfo);
             }
         }
-    }
-
-    private void requireDonwloadSource(int workId, String url) {
-        Log.d(TAG, "require download source: " + url);
-        HsRequest request = new HsRequest();
-        request.setMethod(HsClient.METHOD_GET_VIDEO_DETAIL);
-        request.setCallback(new VideoSourceListener(workId));
-        request.setArgs(url);
-        mClient.execute(request);
-
-        mRequestMap.put(workId, request);
     }
 
     public void startRangeDownload(String[] tokenList) {
         for(String token: tokenList) {
             DownloadQueen.WorkInfo workInfo = getWorkByToken(token);
             if(workInfo != null) {
-                DownloadInfo info = mDownloadInfoMap.get(workInfo.getWId());
+                DownloadDetail info = mDownloadDetailMap.get(workInfo.getWId());
                 info.setState(STATE_WAIT);
-                HStreamDB.putDownloadInfo(info);
+                HStreamDB.updateDownloadInfoState(info.getToken(), STATE_WAIT);
 
-                if(info.getUrl() != null && info.getUrl().length()>0) {
-                    start(workInfo.getWId());
-                } else {
-                    requireDonwloadSource(workInfo.getWId(), info.getSourceUrl());
-                }
+                start(workInfo.getWId());
 
                 if(mDownloadInfoListener != null) {
                     mDownloadInfoListener.onUpdate(info);
@@ -181,16 +148,12 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
         for(int i=0; i<mWorkInfoMap.size(); i++) {
             int workId = (int) mWorkInfoMap.keyAt(i);
 
-            DownloadInfo info = mDownloadInfoMap.get(workId);
+            DownloadDetail info = mDownloadDetailMap.get(workId);
             if(info.getState() != STATE_FINISH) {
                 info.setState(STATE_WAIT);
-                HStreamDB.putDownloadInfo(info);
+                HStreamDB.updateDownloadInfoState(info.getToken(), STATE_WAIT);
 
-                if(info.getUrl() != null && info.getUrl().length()>0) {
-                    start(workId);
-                } else {
-                    requireDonwloadSource(workId, info.getSourceUrl());
-                }
+                start(workId);
 
                 if(mDownloadInfoListener != null) {
                     mDownloadInfoListener.onUpdate(info);
@@ -210,8 +173,8 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
         }
     }
 
-    public void stopDownload(DownloadInfo info){
-        DownloadQueen.WorkInfo workInfo = getWorkByToken(info.getToken());
+    public void stopDownload(String token){
+        DownloadQueen.WorkInfo workInfo = getWorkByToken(token);
         if(workInfo != null) {
             mDownloadQueen.stopWork(workInfo);
 
@@ -220,10 +183,9 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
                 mSpeedReminder.stop();
             }
 
-            DownloadInfo cancelInfo = mDownloadInfoMap.get(workInfo.getWId());
+            DownloadDetail cancelInfo = mDownloadDetailMap.get(workInfo.getWId());
             cancelInfo.setState(STATE_NONE);
-
-            HStreamDB.putDownloadInfo(cancelInfo);
+            HStreamDB.updateDownloadInfoState(cancelInfo.getToken(), STATE_NONE);
 
             if(mDownloadInfoListener != null) {
                 mDownloadInfoListener.onCancel(cancelInfo);
@@ -240,11 +202,11 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
         mSpeedReminder.onFinish();
         mSpeedReminder.stop();
 
-        List<DownloadInfo> list = getDownloadInfoList();
-        for(DownloadInfo info: list) {
+        List<DownloadDetail> list = getDownloadInfoList();
+        for(DownloadDetail info: list) {
             if(info.getState() != STATE_FINISH) {
                 info.setState(STATE_NONE);
-                HStreamDB.putDownloadInfo(info);
+                HStreamDB.updateDownloadInfoState(info.getToken(), STATE_NONE);
             }
         }
 
@@ -253,17 +215,17 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
         }
     }
 
-    public void deleteDownload(DownloadInfo info) {
-        stopDownload(info);
+    public void deleteDownload(DownloadDetail info) {
+        stopDownload(info.getToken());
         //delete from database
         HStreamDB.removeDownloadInfo(info.getToken());
         //remove from cache
         DownloadQueen.WorkInfo workInfo = getWorkByToken(info.getToken());
-        List<DownloadInfo> list = getDownloadInfoList();
+        List<DownloadDetail> list = getDownloadInfoList();
         int position = list.indexOf(info);
 
         mDefaultList.remove(info);
-        mDownloadInfoMap.remove(workInfo.getWId());
+        mDownloadDetailMap.remove(workInfo.getWId());
         mWorkInfoMap.remove(workInfo.getWId());
         //delete file
         DownloadUtil.deleteFile(workInfo.getFileName());
@@ -321,65 +283,6 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
         SimpleHandler.getInstance().post(task);
     }
 
-    private class VideoSourceListener implements HsClient.Callback<VideoSourceParser.Result> {
-
-        private int mWorkId;
-
-        public VideoSourceListener(int workId) {
-            mWorkId = workId;
-        }
-
-        @Override
-        public void onSuccess(VideoSourceParser.Result result) {
-            Log.d(TAG, "current thread: " + Thread.currentThread().getName());
-
-            VideoSourceInfo videoSourceInfo = result.mVideoSourceInfoList.get(0);
-            if(videoSourceInfo != null && videoSourceInfo.videoUrl != null) {
-                Log.d(TAG, "get video url: " + videoSourceInfo.videoUrl);
-                DownloadInfo info = mDownloadInfoMap.get(mWorkId);
-                info.setUrl(videoSourceInfo.videoUrl);
-                HStreamDB.putDownloadInfo(info);
-
-                //update downloader url, when the old url invalid;
-                DownloadQueen.WorkInfo workInfo = mWorkInfoMap.get(mWorkId);
-                workInfo.setFileUrl(videoSourceInfo.videoUrl);
-
-                start(mWorkId);
-            } else {
-                DownloadInfo info = mDownloadInfoMap.get(mWorkId);
-                info.setState(STATE_FAILED);
-                HStreamDB.putDownloadInfo(info);
-
-                if(mDownloadInfoListener != null) {
-                    mDownloadInfoListener.onUpdate(info);
-                }
-
-                //mSpeedReminder.onDone(mWorkId);
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            Log.d(TAG, "get video url error, " + e.getMessage());
-
-            DownloadInfo info = mDownloadInfoMap.get(mWorkId);
-            info.setState(STATE_FAILED);
-            HStreamDB.putDownloadInfo(info);
-
-            if(mDownloadInfoListener != null) {
-                mDownloadInfoListener.onUpdate(info);
-            }
-
-            //mSpeedReminder.onDone(mWorkId);
-            //Toast.makeText(mContext, info.getTitle() + ":" + R.string.gl_get_source_fail, Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onCancel() {
-            Log.d(TAG, "request already canceled");
-        }
-    }
-
     protected class NotifyTask implements Runnable {
 
         private static final int TYPE_ON_START_DATA = 0;
@@ -429,9 +332,9 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
                 case TYPE_ON_START_DATA:
                     mSpeedReminder.onAdd(mWorkId);
 
-                    DownloadInfo startInfo = mDownloadInfoMap.get(mWorkId);
+                    DownloadDetail startInfo = mDownloadDetailMap.get(mWorkId);
                     startInfo.setState(STATE_DOWNLOAD);
-                    HStreamDB.putDownloadInfo(startInfo);
+                    HStreamDB.updateDownloadInfoState(startInfo.getToken(), STATE_DOWNLOAD);
 
                     if(mDownloadInfoListener != null) {
                         mDownloadInfoListener.onUpdate(startInfo);
@@ -448,9 +351,9 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
                         mSpeedReminder.stop();
                     }
 
-                    DownloadInfo finishInfo = mDownloadInfoMap.get(mWorkId);
+                    DownloadDetail finishInfo = mDownloadDetailMap.get(mWorkId);
                     finishInfo.setState(STATE_FINISH);
-                    HStreamDB.putDownloadInfo(finishInfo);
+                    HStreamDB.updateDownloadInfoState(finishInfo.getToken(), STATE_FINISH);
 
                     if(mDownloadInfoListener != null) {
                         mDownloadInfoListener.onUpdate(finishInfo);
@@ -468,9 +371,9 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
                         mSpeedReminder.stop();
                     }
 
-                    DownloadInfo failInfo = mDownloadInfoMap.get(mWorkId);
+                    DownloadDetail failInfo = mDownloadDetailMap.get(mWorkId);
                     failInfo.setState(STATE_FAILED);
-                    HStreamDB.putDownloadInfo(failInfo);
+                    HStreamDB.updateDownloadInfoState(failInfo.getToken(), STATE_FAILED);
 
                     if(mDownloadInfoListener != null) {
                         mDownloadInfoListener.onUpdate(failInfo);
@@ -480,8 +383,8 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
                 case TYPE_ON_GET_410_DATA :
                     mSpeedReminder.onDone(mWorkId);
 
-                    DownloadInfo fourInfo = mDownloadInfoMap.get(mWorkId);
-                    requireDonwloadSource(mWorkId, fourInfo.getSourceUrl());
+                    //DownloadInfo fourInfo = mDownloadDetailMap.get(mWorkId);
+                    //start(mWorkId);
                     break;
             }
 
@@ -568,7 +471,7 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
                 speedInfo.oldSpeed = newSpeed;
                 speedInfo.bytesRead = 0;
 
-                DownloadInfo info = mDownloadInfoMap.get(workId);
+                DownloadDetail info = mDownloadDetailMap.get(workId);
                 if(info != null) {
                     info.setSpeed(speedInfo.oldSpeed);
                     info.setTotal(speedInfo.contentLength);
@@ -611,15 +514,15 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
 
     public interface DownloadInfoListener {
 
-        void onAdd(DownloadInfo info);
+        void onAdd(DownloadDetail info);
 
-        void onUpdate(DownloadInfo info);
+        void onUpdate(DownloadDetail info);
 
         void onUpdateAll();
 
-        void onCancel(DownloadInfo info);
+        void onCancel(DownloadDetail info);
 
-        void onRemove(DownloadInfo info, int position);
+        void onRemove(DownloadDetail info, int position);
     }
 
     public interface DownloadListener {
@@ -627,7 +530,7 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
         /**
          * Start download
          */
-        void onStart(DownloadInfo info);
+        void onStart(DownloadDetail info);
 
         /**
          * Update download speed
@@ -637,7 +540,7 @@ public class DownloadManager implements DownloadQueen.DownloadWorkListener{
         /**
          * Download done
          */
-        void onFinish(DownloadInfo info);
+        void onFinish(DownloadDetail info);
 
     }
 

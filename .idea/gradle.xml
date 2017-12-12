@@ -9,7 +9,9 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/calendarview" />
             <option value="$PROJECT_DIR$/daogenerator" />
+            <option value="$PROJECT_DIR$/videocache" />
             <option value="$PROJECT_DIR$/videoplayer" />
           </set>
         </option>
