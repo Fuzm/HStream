@@ -4,29 +4,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
+    <com.stream.widget.DrawableSearchEditText
+        android:id="@+id/subtitle_edit_text"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
-
-        <com.stream.widget.DrawableSearchEditText
-            android:id="@+id/subtitle_edit_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="1"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:imeOptions="actionSearch"
-            android:inputType="text"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:textSize="@dimen/text_little_small"
-            android:padding="6dp"
-            android:layout_marginLeft="12dp"
-            android:layout_marginRight="12dp"/>
-
-    </LinearLayout>
+        android:layout_height="32dp"
+        android:layout_gravity="center_vertical"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:imeOptions="actionSearch"
+        android:inputType="text"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:textSize="@dimen/text_little_small"
+        android:padding="6dp"
+        android:layout_margin="8dp"/>
 
     <View
         android:layout_width="match_parent"
@@ -36,6 +27,19 @@
     <ListView
         android:id="@+id/subtitle_search_list"
         android:layout_width="match_parent"
-        android:layout_height="200dp" />
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minHeight="200dp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/grey_300" />
+
+    <com.stream.widget.NumberAjustBar
+        android:id="@+id/number_ajust"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"/>
 
 </LinearLayout>

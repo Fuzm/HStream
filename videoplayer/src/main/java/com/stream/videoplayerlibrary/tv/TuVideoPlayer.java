@@ -316,6 +316,16 @@ public final class TuVideoPlayer extends FrameLayout
         }
     }
 
+    /**
+     * ajust subtitle show time
+     * @param ajustTime
+     */
+    public void ajustSubtitleTime(float ajustTime) {
+        if(mSubtitleText != null) {
+            mSubtitleText.setAjustTime(ajustTime);
+        }
+    }
+
     private void release(boolean clearState) {
         mManager.release(clearState);
     }
@@ -1030,6 +1040,4 @@ public final class TuVideoPlayer extends FrameLayout
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
         }
     }
-
-
 }

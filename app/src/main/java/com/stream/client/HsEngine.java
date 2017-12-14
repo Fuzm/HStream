@@ -38,8 +38,6 @@ public class HsEngine {
             task.setCall(call);
         }
 
-
-
         String body = null;
         Headers headers = null;
         int code = -1;

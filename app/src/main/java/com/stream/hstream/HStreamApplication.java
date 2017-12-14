@@ -14,6 +14,7 @@ import com.stream.okhttp.MobileRequestBuilder;
 import com.stream.util.GetText;
 import com.stream.util.HSAssetManager;
 import com.stream.util.ImageBitmapHelper;
+import com.stream.util.SubtitleFileMananger;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +55,7 @@ public class HStreamApplication extends Application {
         HStreamDB.initialize(this);
         GetText.initialize(this);
         HSAssetManager.initialize(this);
+        SubtitleFileMananger.initialize();
     }
 
     public static OkHttpClient getOkHttpClient(Context context) {

@@ -3,7 +3,6 @@ package com.stream.hstream.adapter;
 import android.content.Context;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.AppCompatImageView;
 import android.support.v7.widget.AppCompatTextView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -11,8 +10,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -24,7 +21,6 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckedTextView;
 import android.widget.ListView;
-import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,7 +33,6 @@ import com.stream.client.HsUrl;
 import com.stream.client.data.VideoDetailInfo;
 import com.stream.client.data.VideoInfo;
 import com.stream.client.data.VideoSourceInfo;
-import com.stream.client.parser.Parser;
 import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoUrlParser;
 import com.stream.dao.DetailInfo;
@@ -52,13 +47,13 @@ import com.stream.hstream.HStreamApplication;
 import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
 import com.stream.hstream.Setting;
-import com.stream.util.HSAssetManager;
+//import com.stream.util.HSAssetManager;
 import com.stream.util.LoadImageHelper;
 import com.stream.util.StreamUtils;
+import com.stream.util.SubtitleFileMananger;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 import com.stream.videoplayerlibrary.tv.VideoPlayer;
 import com.stream.widget.DrawableSearchEditText;
-import com.stream.widget.SearchEditText;
 
 import junit.framework.Assert;
 
@@ -68,6 +63,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.stream.util.SubtitleFileMananger.SubtitleFileInfo;
+import com.stream.widget.NumberAjustBar;
 
 /**
  * Created by Fuzm on 2017/3/24 0024.
@@ -271,6 +269,7 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
         if(mSubtitleDialog == null) {
             View view = LayoutInflater.from(mContext).inflate(R.layout.dialog_subtitle_search, null);
             mEditText = (DrawableSearchEditText) view.findViewById(R.id.subtitle_edit_text);
+            NumberAjustBar numberAjustBar = (NumberAjustBar) view.findViewById(R.id.number_ajust);
             ListView subtitleList = (ListView) view.findViewById(R.id.subtitle_search_list);
 
             //set default search text
@@ -280,8 +279,8 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
             }
 
             //set adapter and item click listener
-            List dataList = HSAssetManager.querySubtitle(nativeName);
-            final ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, R.layout.item_search_subtitle_list, dataList);
+            List<SubtitleFileInfo> dataList = SubtitleFileMananger.querySubtitle(nativeName);
+            final ArrayAdapter<SubtitleFileInfo> adapter = new ArrayAdapter<SubtitleFileInfo>(mContext, R.layout.item_search_subtitle_list, dataList);
             subtitleList.setAdapter(adapter);
 
             //build dialog
@@ -294,7 +293,7 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
                 @Override
                 public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                     if(!TextUtils.isEmpty(mEditText.getText().toString())) {
-                        List subtitleList = HSAssetManager.querySubtitle(mEditText.getText().toString());
+                        List<SubtitleFileMananger.SubtitleFileInfo> subtitleList = SubtitleFileMananger.querySubtitle(mEditText.getText().toString());
                         adapter.clear();
                         adapter.addAll(subtitleList);
                         adapter.notifyDataSetChanged();
@@ -308,9 +307,17 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
             subtitleList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    String subtitle = adapter.getItem(position);
-                    loadSubtitle(subtitle);
+                    SubtitleFileInfo subtitle = adapter.getItem(position);
+                    loadSubtitle(subtitle.getFilePath());
                     mSubtitleDialog.hide();
+                }
+            });
+
+            numberAjustBar.setDistance(0.5f);
+            numberAjustBar.setNumberAjustListener(new NumberAjustBar.NumberAjustListener() {
+                @Override
+                public void ajust(float newValue, float oldValue) {
+                    ajustSubtitleTime(newValue);
                 }
             });
 
@@ -334,7 +341,8 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
      */
     private void loadSubtitle(String subtitle) {
         if(mVideoPlayer.isPlaying()) {
-            mVideoPlayer.loadSubtitleFromAssets(HSAssetManager.getSubtitleDir() + subtitle);
+            //mVideoPlayer.loadSubtitleFromAssets(SubtitleFileMananger.getSubtitleDir() + subtitle);
+            mVideoPlayer.loadSubtitle(subtitle);
         }
 
         //save detail info for subtitle
@@ -343,6 +351,14 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
             detailInfo.setSubtitle_path(subtitle);
             HStreamDB.putDetailInfo(detailInfo);
         }
+    }
+
+    /**
+     * ajust subtitle time
+     * @param value
+     */
+    private void ajustSubtitleTime(float value) {
+        mVideoPlayer.ajustSubtitleTime(value);
     }
 
     /**
@@ -416,6 +432,11 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
             mData.clear();
             mAdapter.notifyDataSetChanged();
             mSpinner.setSelection(0);
+        }
+
+        if(mSubtitleDialog != null) {
+            mSubtitleDialog.dismiss();
+            mSubtitleDialog = null;
         }
 
         loadMessageShow(true, R.string.source_loading);
@@ -508,7 +529,8 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
                             DetailInfo detailInfo = HStreamDB.queryDetailInfo(token);
                             String subtitle = detailInfo.getSubtitle_path();
                             if(!TextUtils.isEmpty(subtitle)) {
-                                mVideoPlayer.loadSubtitleFromAssets(HSAssetManager.getSubtitleDir() + subtitle);
+                                //mVideoPlayer.loadSubtitleFromAssets(HSAssetManager.getSubtitleDir() + subtitle);
+                                mVideoPlayer.loadSubtitle(subtitle);
                             }
                         }
                     }
@@ -824,11 +846,11 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
          * @param query
          */
         private void autoLoadSubtitle(String token, String query) {
-            List<String> subtitleList = HSAssetManager.querySubtitle(query);
+            List<SubtitleFileInfo> subtitleList = SubtitleFileMananger.querySubtitle(query);
             if(subtitleList != null && subtitleList.size() == 1) {
                 DetailInfo detailInfo = HStreamDB.queryDetailInfo(token);
                 if(TextUtils.isEmpty(detailInfo.getSubtitle_path())) {
-                    detailInfo.setSubtitle_path(subtitleList.get(0));
+                    detailInfo.setSubtitle_path(subtitleList.get(0).getFilePath());
                     HStreamDB.putDetailInfo(detailInfo);
                 }
             }

@@ -44,6 +44,14 @@ public class StringUtils {
         return str;
     }
 
+    public static boolean isEmpty(String str) {
+        if(str == null || str.length() == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public static void main(String[] args) {
         System.out.println(StringUtils.createToken("测试"));
     }

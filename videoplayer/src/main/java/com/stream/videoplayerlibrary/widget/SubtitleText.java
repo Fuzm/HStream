@@ -52,6 +52,7 @@ public class SubtitleText extends StrokeTextView {
 
     private String mAssetsPath;
     private File mFile;
+    private float mAjustTime = 0f;
 
     public SubtitleText(Context context) {
         super(context);
@@ -119,6 +120,10 @@ public class SubtitleText extends StrokeTextView {
         return mFile;
     }
 
+    public void setAjustTime(float ajustTime) {
+        mAjustTime = ajustTime;
+    }
+
     public void cancel() {
         if (subtitleProcessesor != null) {
             removeCallbacks(subtitleProcessesor);
@@ -128,6 +133,7 @@ public class SubtitleText extends StrokeTextView {
 
         setVisibility(INVISIBLE);
         mSubtitle = null;
+        mAjustTime = 0;
         setText("");
     }
 
@@ -155,6 +161,9 @@ public class SubtitleText extends StrokeTextView {
         public void run() {
             if (mVideoPlayer != null && mVideoPlayer.isPlaying() && mSubtitle != null) {
                 long currentPos = mVideoPlayer.getCurrentPosition();
+                Log.d(TAG, "ajust time: " + mAjustTime);
+                currentPos += (mAjustTime * 1000);
+
                 Collection<Caption> subtitles = mSubtitle.captions.values();
                 for (Caption caption : subtitles) {
                     if (currentPos >= caption.start.mseconds && currentPos <= caption.end.mseconds) {

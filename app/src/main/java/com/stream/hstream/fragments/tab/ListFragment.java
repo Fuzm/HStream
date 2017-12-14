@@ -367,6 +367,13 @@ public class ListFragment extends SceneFragment implements
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+
+        TuMediaPlayerManager.instance().release(true);
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
 
