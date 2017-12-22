@@ -134,6 +134,7 @@ public class SubtitleText extends StrokeTextView {
         setVisibility(INVISIBLE);
         mSubtitle = null;
         mAjustTime = 0;
+        mVideoPlayer = null;
         setText("");
     }
 
@@ -161,7 +162,7 @@ public class SubtitleText extends StrokeTextView {
         public void run() {
             if (mVideoPlayer != null && mVideoPlayer.isPlaying() && mSubtitle != null) {
                 long currentPos = mVideoPlayer.getCurrentPosition();
-                Log.d(TAG, "ajust time: " + mAjustTime);
+                //Log.d(TAG, "ajust time: " + mAjustTime);
                 currentPos += (mAjustTime * 1000);
 
                 Collection<Caption> subtitles = mSubtitle.captions.values();

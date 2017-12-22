@@ -71,11 +71,11 @@ public class TuIjkMediaPlayer extends ITuMediaPlayer {
     public void setDataSource(String path, Map<String, String> headers) throws IOException {
         mIjkMediaPlayer.setDataSource(path, headers);
 
-//        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
+        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
 //        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);
-//        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 48);
-//        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 8);
-        //mIjkMediaPlayer.setOption(1, "analyzemaxduration", 100L);
+        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 48);
+        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 8);
+        mIjkMediaPlayer.setOption(1, "analyzemaxduration", 100L);
         mIjkMediaPlayer.setOption(1, "probesize", 10240L);
         mIjkMediaPlayer.setOption(1, "flush_packets", 1L);
         mIjkMediaPlayer.setOption(4, "packet-buffering", 0L);

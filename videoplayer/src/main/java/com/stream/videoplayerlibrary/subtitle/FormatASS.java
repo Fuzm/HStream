@@ -1,5 +1,7 @@
 package com.stream.videoplayerlibrary.subtitle;
 
+import com.stream.videoplayerlibrary.common.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,10 +83,13 @@ public class FormatASS implements TimedTextFileFormat {
 						while (!line.startsWith("[")){
 							if(line.startsWith("Title:"))
 								//We have found the title
-								tto.title = line.split(":")[1].trim();
+
+								//tto.title = line.split(":")[1].trim();
+								tto.title = StringUtils.splitIndex(line, ":", 1);
 							else if (line.startsWith("Original Script:"))
 								//We have found the author
-								tto.author = line.split(":")[1].trim();
+								//tto.author = line.split(":")[1].trim();
+								tto.author = StringUtils.splitIndex(line, ":", 1);
 							else if (line.startsWith("Script Type:")){
 								//we have found the version
 								if(line.split(":")[1].trim().equalsIgnoreCase("v4.00+"))isASS = true;

@@ -28,5 +28,7 @@ public interface VideoPlayer<E> {
 
     boolean isPlaying();
 
+    void pause();
+
     long getCurrentPosition();
 }

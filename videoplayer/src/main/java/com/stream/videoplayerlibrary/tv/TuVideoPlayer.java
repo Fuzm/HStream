@@ -335,6 +335,7 @@ public final class TuVideoPlayer extends FrameLayout
         prepareMediaPlayer();
     }
 
+    @Override
     public void pause() {
         setCurrentStateAndUi(STATE_PAUSE);
         if(mManager != null) {

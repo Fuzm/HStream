@@ -70,7 +70,13 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
         }
     }
 
-    public synchronized void release(boolean clearState) {
+    public synchronized static void pauseManager() {
+        if(sTuMediaPlayerManager != null && sTuMediaPlayerManager.mVideoPlayer != null) {
+            sTuMediaPlayerManager.mVideoPlayer.pause();
+        }
+    }
+
+    protected synchronized void release(boolean clearState) {
         if(sTuMediaPlayerManager != null) {
 
             if(sTuMediaPlayerManager.getVideoPlayer() != null) {
@@ -149,23 +155,23 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
         mMediaHandler.sendMessage(msg);
     }
 
-    public void start() {
+    protected void start() {
         if(mMediaPlayer != null)
             mMediaPlayer.start();
     }
 
-    public void pause() {
+    protected void pause() {
         if(mMediaPlayer != null && mMediaPlayer.isPlaying())
             mMediaPlayer.pause();
     }
 
-    public void seekTo(long posi) {
+    protected void seekTo(long posi) {
         if(mMediaPlayer != null) {
             mMediaPlayer.seekTo(posi);
         }
     }
 
-    public boolean isPlaying() {
+    protected boolean isPlaying() {
         if(mMediaPlayer != null) {
             return  mMediaPlayer.isPlaying();
         } else {
@@ -173,7 +179,7 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
         }
     }
 
-    public long getCurrentPosition() {
+    protected long getCurrentPosition() {
         long position = 0;
         if(mMediaPlayer == null) {
             return position;
@@ -189,7 +195,7 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
         return position;
     }
 
-    public long getDuration() {
+    protected long getDuration() {
         return mMediaPlayer.getDuration();
     }
 
