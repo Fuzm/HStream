@@ -19,8 +19,6 @@ public class TuIjkMediaPlayer extends ITuMediaPlayer {
     public TuIjkMediaPlayer() {
         mIjkMediaPlayer = new IjkMediaPlayer();
 
-
-
         mIjkMediaPlayer.setOnPreparedListener(new IMediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(IMediaPlayer iMediaPlayer) {
@@ -72,14 +70,31 @@ public class TuIjkMediaPlayer extends ITuMediaPlayer {
         mIjkMediaPlayer.setDataSource(path, headers);
 
         mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
-//        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);
+        mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);
         mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 48);
         mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 8);
         mIjkMediaPlayer.setOption(1, "analyzemaxduration", 100L);
-        mIjkMediaPlayer.setOption(1, "probesize", 10240L);
+        mIjkMediaPlayer.setOption(1, "probesize", 1024 * 10L);
         mIjkMediaPlayer.setOption(1, "flush_packets", 1L);
-        mIjkMediaPlayer.setOption(4, "packet-buffering", 0L);
+        //mIjkMediaPlayer.setOption(4, "packet-buffering", 1L);
         mIjkMediaPlayer.setOption(4, "framedrop", 1L);
+
+        if (true) {
+            // Param for living
+            mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max_cached_duration", 3000);
+            mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "infbuf", 1);
+            mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 0);
+        } else {
+            // Param for playback
+            mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max_cached_duration", 0);
+            mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "infbuf", 0);
+            mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 1);
+        }
+
+        // hard codec
+        //mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);
+        //mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 1);
+        //mIjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 1);
     }
 
     @Override

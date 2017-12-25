@@ -322,6 +322,7 @@ public class TuMediaPlayerManager implements TextureView.SurfaceTextureListener{
 
                         Log.d(TAG, "play video address : " + mUri);
                         mMediaPlayer = new TuIjkMediaPlayer();
+                        //mMediaPlayer = new TuMediaPlayer();
                         mMediaPlayer.setOnPreparedListener(mPreparedListener);
                         mMediaPlayer.setOnInfoListener(mInfoListener);
                         mMediaPlayer.setOnCompletionListener(mCompletionListener);

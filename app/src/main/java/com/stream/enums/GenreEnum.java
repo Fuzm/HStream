@@ -15,8 +15,16 @@ public enum GenreEnum {
     Japanese(Setting.WEB_MUCHO, "Japanse", "japanese", GenreEnum.TYPE_GENER),
     English(Setting.WEB_MUCHO, "English", "english-subbed", GenreEnum.TYPE_GENER),
     PV(Setting.WEB_MUCHO, "PV", "preview", GenreEnum.TYPE_GENER),
-    Anal(Setting.WEB_MUCHO, "Anal", "anal", GenreEnum.TYPE_GENER),
+    Anal(Setting.WEB_MUCHO, "AL", "anal", GenreEnum.TYPE_GENER),
     SchoolGirls(Setting.WEB_MUCHO, "SG", "school-girls", GenreEnum.TYPE_GENER),
+    Rape(Setting.WEB_MUCHO, "RP", "rape", GenreEnum.TYPE_GENER),
+//    Y2017(Setting.WEB_MUCHO, "2017", "2017", GenreEnum.TYPE_GENER),
+//    Y2016(Setting.WEB_MUCHO, "2016", "2016", GenreEnum.TYPE_GENER),
+//    Y2015(Setting.WEB_MUCHO, "2015", "2015", GenreEnum.TYPE_GENER),
+//    Y2014(Setting.WEB_MUCHO, "2014", "2014", GenreEnum.TYPE_GENER),
+//    Y2013(Setting.WEB_MUCHO, "2013", "2013", GenreEnum.TYPE_GENER),
+//    Y2012(Setting.WEB_MUCHO, "2012", "2012", GenreEnum.TYPE_GENER),
+//    Y2011(Setting.WEB_MUCHO, "2011", "2011", GenreEnum.TYPE_GENER),
 
     //gener-stream
     Home(Setting.WEB_STREAM, "Home", "home", GenreEnum.TYPE_GENER),
