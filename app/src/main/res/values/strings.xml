@@ -133,4 +133,7 @@
 
     <string name="msg_last_page">last page -_-</string>
 
+    <!-- Dialog -->
+    <string name="dialog_close">Close</string>
+
 </resources>

@@ -52,6 +52,19 @@ public class StringUtils {
         }
     }
 
+    /**
+     * Get first string from param
+     * @param str
+     * @return
+     */
+    public static String getFirstStr(String str) {
+        if(str != null && str.length() > 0) {
+            return str.substring(0, 1);
+        } else {
+            return null;
+        }
+    }
+
     public static void main(String[] args) {
         System.out.println(StringUtils.createToken("测试"));
     }

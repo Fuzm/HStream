@@ -57,7 +57,7 @@ public class SubtitleFileMananger {
         long cm = System.currentTimeMillis();
         List<SubtitleFileInfo> queryList = new ArrayList<>();
         List<SubtitleFileInfo> subtitleArr = listSubtitle();
-        if(subtitleArr != null) {
+        if(subtitleArr != null && query != null) {
             query = StringUtils.clearWhiteSpace(query);
             for(SubtitleFileInfo subtitle: subtitleArr) {
                 if(StringUtils.clearWhiteSpace(subtitle.getName()).contains(query)) {

@@ -1,6 +1,9 @@
 package com.stream.hstream.adapter;
 
+import android.app.Dialog;
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.AppCompatTextView;
@@ -48,11 +51,13 @@ import com.stream.hstream.HStreamDB;
 import com.stream.hstream.R;
 import com.stream.hstream.Setting;
 //import com.stream.util.HSAssetManager;
+import com.stream.util.DrawableManager;
 import com.stream.util.LoadImageHelper;
 import com.stream.util.StreamUtils;
 import com.stream.util.SubtitleFileMananger;
 import com.stream.videoplayerlibrary.tv.TuVideoPlayer;
 import com.stream.videoplayerlibrary.tv.VideoPlayer;
+import com.stream.widget.BottomDialog;
 import com.stream.widget.DrawableSearchEditText;
 
 import junit.framework.Assert;
@@ -177,39 +182,14 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
      * open menu dialog
      */
     private void openMenuDialog() {
-        View view = LayoutInflater.from(mContext).inflate(R.layout.dialog_list_menu, null);
+        final BottomDialog dialog = new BottomDialog(mContext, R.style.BottomDialog);
 
-        TextView downloadTextView = (TextView) view.findViewById(R.id.download_button);
-        TextView requireTextView = (TextView) view.findViewById(R.id.refresh_button);
-        TextView subtitleView = (TextView) view.findViewById(R.id.subtitle_button);
+        Resources resources = mContext.getResources();
+        Drawable downloadDrawable = DrawableManager.getDrawable(mContext, R.drawable.ic_action_download);
+        Drawable refreshDrawable = DrawableManager.getDrawable(mContext, R.drawable.ic_action_refresh);
 
-        //build dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(mContext, R.style.BottomDialog);
-        builder.setView(view);
-        final AlertDialog dialog = builder.create();
-
-        Window dialogWin = dialog.getWindow();
-        dialogWin.setGravity(Gravity.BOTTOM);
-        WindowManager.LayoutParams lp = dialogWin.getAttributes();
-        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-        lp.width = WindowManager.LayoutParams.WRAP_CONTENT;
-        dialogWin.setAttributes(lp);
-
-        dialog.show();
-
-        //set required button listener
-        requireTextView.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                dialog.hide();
-                //force refresh video source data
-                requiredSourceInfo(mVideoInfo, true);
-            }
-        });
-
-        //set download listener
-        downloadTextView.setOnClickListener(new View.OnClickListener() {
+        List<BottomDialog.MenuItem> items = new ArrayList<>();
+        items.add(new BottomDialog.MenuItem(resources.getString(R.string.list_menu_download), downloadDrawable, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dialog.hide();
@@ -249,17 +229,27 @@ public class VideoTvHolder extends RecyclerView.ViewHolder{
                     SubtitleDownloader.instance().start(detailInfo.getSubtitle_path(), mVideoInfo.title);
                 }
             }
-        });
+        }));
 
-        //open dialog for search subtitle
-        subtitleView.setOnClickListener(new View.OnClickListener() {
-
+        items.add(new BottomDialog.MenuItem(resources.getString(R.string.list_menu_subtitle), null, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dialog.hide();
                 openSubtitleDialog();
             }
-        });
+        }));
+
+        items.add(new BottomDialog.MenuItem(resources.getString(R.string.list_menu_refresh), refreshDrawable, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.hide();
+                //force refresh video source data
+                requiredSourceInfo(mVideoInfo, true);
+            }
+        }));
+
+        dialog.setMenuItems(items);
+        dialog.show();
     }
 
     /**
