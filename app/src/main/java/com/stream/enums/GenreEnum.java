@@ -13,11 +13,11 @@ public enum GenreEnum {
 
     //gener-mucho
     Japanese(Setting.WEB_MUCHO, "Japanse", "japanese", GenreEnum.TYPE_GENER),
-    English(Setting.WEB_MUCHO, "English", "english-subbed", GenreEnum.TYPE_GENER),
     PV(Setting.WEB_MUCHO, "PV", "preview", GenreEnum.TYPE_GENER),
-    Anal(Setting.WEB_MUCHO, "AL", "anal", GenreEnum.TYPE_GENER),
-    SchoolGirls(Setting.WEB_MUCHO, "SG", "school-girls", GenreEnum.TYPE_GENER),
-    Rape(Setting.WEB_MUCHO, "RP", "rape", GenreEnum.TYPE_GENER),
+//    English(Setting.WEB_MUCHO, "English", "english-subbed", GenreEnum.TYPE_GENER),
+//    Anal(Setting.WEB_MUCHO, "AL", "anal", GenreEnum.TYPE_GENER),
+//    SchoolGirls(Setting.WEB_MUCHO, "SG", "school-girls", GenreEnum.TYPE_GENER),
+//    Rape(Setting.WEB_MUCHO, "RP", "rape", GenreEnum.TYPE_GENER),
 //    Y2017(Setting.WEB_MUCHO, "2017", "2017", GenreEnum.TYPE_GENER),
 //    Y2016(Setting.WEB_MUCHO, "2016", "2016", GenreEnum.TYPE_GENER),
 //    Y2015(Setting.WEB_MUCHO, "2015", "2015", GenreEnum.TYPE_GENER),

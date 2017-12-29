@@ -1,18 +1,15 @@
 package com.stream.client;
 
 import android.util.Log;
-import android.widget.VideoView;
 
-import com.stream.client.data.VideoSourceInfo;
+import com.stream.client.parser.GenreInfoParser;
 import com.stream.client.parser.ReleaseInfoParser;
 import com.stream.client.parser.VideoListParser;
 import com.stream.client.parser.VideoSourceParser;
 import com.stream.client.parser.VideoUrlParser;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import okhttp3.Call;
 import okhttp3.Headers;
@@ -50,7 +47,7 @@ public class HsEngine {
 
             result = VideoListParser.parse(body);
         } catch (Exception e) {
-            if(null !=body && body.contains("No episodes found")) {
+            if (null != body && body.contains("No episodes found")) {
                 result.pages = 0;
                 result.mVideoInfoList = Collections.emptyList();
                 return result;
@@ -100,6 +97,7 @@ public class HsEngine {
 
     /**
      * web stream use now
+     *
      * @param task
      * @param okHttpClient
      * @param url
@@ -138,6 +136,7 @@ public class HsEngine {
 
     /**
      * get release info by url
+     *
      * @param task
      * @param okHttpClient
      * @param url
@@ -167,9 +166,39 @@ public class HsEngine {
             e.printStackTrace();
             throw e;
         } finally {
-            if(inputStream != null) {
+            if (inputStream != null) {
                 inputStream.close();
             }
+        }
+
+        return result;
+    }
+
+    public static GenreInfoParser.Result getGenreInfo(HsClient.Task task, OkHttpClient okHttpClient, String url) throws Exception {
+        Log.d(TAG, "get genre info url by " + url);
+
+        Request request = new EhRequestBuilder(url).addHeader("Connection", "close").build();
+        Call call = okHttpClient.newCall(request);
+
+        if (task != null) {
+            task.setCall(call);
+        }
+
+        String body = null;
+        Headers headers = null;
+        int code = -1;
+        GenreInfoParser.Result result = null;
+
+        try {
+            Response response = call.execute();
+            code = response.code();
+            headers = response.headers();
+            body = response.body().string();
+
+            result = GenreInfoParser.parse(body);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
 
         return result;

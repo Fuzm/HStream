@@ -22,6 +22,7 @@ import com.stream.client.HsRequest;
 import com.stream.client.data.ListUrlBuilder;
 import com.stream.client.data.VideoInfo;
 import com.stream.client.parser.VideoListParser;
+import com.stream.dao.GenreInfo;
 import com.stream.drawable.AddDeleteDrawable;
 import com.stream.enums.GenreEnum;
 import com.stream.hstream.HStreamApplication;
@@ -48,13 +49,14 @@ public class ListFragment extends SceneFragment implements
     /**
      * get fragment for gener list
      */
+    private GenreInfo mGenreInfo;
     private GenreEnum mGenreEnum;
     private String mKeyword;
 
-    public static ListFragment getInstance(GenreEnum genreEnum) {
-        Assert.assertNotNull("genre type not null for list", genreEnum);
+    public static ListFragment getInstance(GenreInfo genreInfo) {
+        Assert.assertNotNull("genre type not null for list", genreInfo);
         ListFragment fragment = new ListFragment();
-        fragment.mGenreEnum = genreEnum;
+        fragment.mGenreInfo = genreInfo;
         return fragment;
     }
 
@@ -108,7 +110,7 @@ public class ListFragment extends SceneFragment implements
 
         Context context = getContext();
         mClient = HStreamApplication.getHsClient(context);
-        mUrlBuilder = new ListUrlBuilder(mGenreEnum);
+        mUrlBuilder = new ListUrlBuilder(mGenreEnum, mGenreInfo);
 
         if(!TextUtils.isEmpty(mKeyword)) {
             mUrlBuilder.setKeyword(mKeyword);

@@ -31,6 +31,7 @@ public class HsClient {
     public static final int METHOD_GET_VIDEO_URL = 3;
     public static final int METHOD_GET_VIDEO_ALL = 4;
     public static final int METHOD_GET_RELEASE_INFO = 5;
+    public static final int METHOD_GET_GENRE_INFO = 6;
 
     private ThreadPoolExecutor mRequestThreadPool;
     private OkHttpClient mOkHttpClient;
@@ -89,6 +90,8 @@ public class HsClient {
                         return null;
                     case METHOD_GET_RELEASE_INFO:
                         return HsEngine.getReleaseInfo(this, mOkHttpClient, (String) params[0]);
+                    case METHOD_GET_GENRE_INFO:
+                        return HsEngine.getGenreInfo(this, mOkHttpClient, (String) params[0]);
                     default:
                         return new IllegalStateException("Can't detect method " + mMethod);
                 }

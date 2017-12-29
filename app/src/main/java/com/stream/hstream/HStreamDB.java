@@ -16,6 +16,8 @@ import com.stream.dao.DownloadDao;
 import com.stream.dao.DownloadInfo;
 import com.stream.dao.Favorite;
 import com.stream.dao.FavoriteDao;
+import com.stream.dao.GenreDao;
+import com.stream.dao.GenreInfo;
 import com.stream.dao.SourceDao;
 import com.stream.dao.SourceInfo;
 import com.stream.dao.Suggestion;
@@ -277,5 +279,37 @@ public class HStreamDB {
      */
     public synchronized static DetailInfo queryDetailInfo(String token) {
         return sDaoSession.getDetailDao().load(token);
+    }
+
+    /**
+     * save genre info to add or update;
+     * @param genreInfo
+     */
+    public synchronized static void putGenreInfo(GenreInfo genreInfo) {
+        GenreDao dao = sDaoSession.getGenreDao();
+        if(null != genreInfo.getGenre_id() && null != dao.load(genreInfo.getGenre_id())) {
+            dao.update(genreInfo);
+        } else {
+            dao.insert(genreInfo);
+        }
+    }
+
+    /**
+     * Query all genre info
+     * @return
+     */
+    public synchronized static List<GenreInfo> queryAllGenreInfo() {
+        GenreDao dao = sDaoSession.getGenreDao();
+        return dao.loadAll();
+    }
+
+    /**
+     * Query genre info by status
+     * @param status
+     * @return
+     */
+    public synchronized static List<GenreInfo> queryGenreInfoByStatus(int status) {
+        GenreDao dao = sDaoSession.getGenreDao();
+        return dao.queryBuilder().where(GenreDao.Properties.Status.eq(status)).list();
     }
 }

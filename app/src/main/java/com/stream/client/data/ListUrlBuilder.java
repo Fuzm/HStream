@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.stream.client.HsUrl;
+import com.stream.dao.GenreInfo;
 import com.stream.enums.GenreEnum;
 import com.stream.network.UrlBuilder;
 
@@ -20,9 +21,11 @@ public class ListUrlBuilder implements Cloneable, Parcelable{
     private int mPageIndex = 0;
     private String mKeyword = null;
     private GenreEnum mGenreEnum;
+    private GenreInfo mGenreInfo;
 
-    public ListUrlBuilder(GenreEnum genreEnum) {
+    public ListUrlBuilder(GenreEnum genreEnum, GenreInfo genreInfo) {
         mGenreEnum = genreEnum;
+        mGenreInfo = genreInfo;
     }
 
     protected ListUrlBuilder(Parcel in) {
@@ -52,7 +55,7 @@ public class ListUrlBuilder implements Cloneable, Parcelable{
     }
 
     public String build() {
-        return new UrlBuilder(HsUrl.getPageUrl(mGenreEnum, mPageIndex, mKeyword)).build();
+        return new UrlBuilder(HsUrl.getPageUrl(mGenreEnum, mGenreInfo, mPageIndex, mKeyword)).build();
     }
 
     public String build(String url) {

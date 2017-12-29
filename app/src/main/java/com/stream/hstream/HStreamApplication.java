@@ -11,6 +11,7 @@ import com.hippo.yorozuya.OSUtils;
 import com.stream.client.HsClient;
 import com.stream.download.DownloadManager;
 import com.stream.okhttp.MobileRequestBuilder;
+import com.stream.util.GenreManager;
 import com.stream.util.GetText;
 import com.stream.util.HSAssetManager;
 import com.stream.util.ImageBitmapHelper;
@@ -56,6 +57,7 @@ public class HStreamApplication extends Application {
         GetText.initialize(this);
         HSAssetManager.initialize(this);
         SubtitleFileMananger.initialize();
+        GenreManager.initialize(this);
     }
 
     public static OkHttpClient getOkHttpClient(Context context) {

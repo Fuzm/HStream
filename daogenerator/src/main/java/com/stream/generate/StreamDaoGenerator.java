@@ -15,10 +15,10 @@ public class StreamDaoGenerator {
     private static final String DELETE_DIR = "app/src/main/java-gen/com/stream/dao";
 
     public static void generate() throws Exception {
-        Utilities.deleteContents(new File(DELETE_DIR));
-        File outDir = new File(OUT_DIR);
-        outDir.delete();
-        outDir.mkdirs();
+        //Utilities.deleteContents(new File(DELETE_DIR));
+        //File outDir = new File(OUT_DIR);
+        //outDir.delete();
+        //outDir.mkdirs();
 
         Schema schema = new Schema(VERSION, PACKAGE);
         addDetailInfo(schema);
@@ -26,6 +26,7 @@ public class StreamDaoGenerator {
         addDownloads(schema);
         addFavorites(schema);
         addSuggestions(schema);
+        addGenerInfo(schema);
 
         new DaoGenerator( ).generateAll(schema, OUT_DIR);
     }
@@ -95,6 +96,16 @@ public class StreamDaoGenerator {
         entity.addIdProperty().autoincrement();
         entity.addStringProperty("query");
         entity.addLongProperty("date");
+    }
+
+    private static void addGenerInfo(Schema schema) {
+        Entity entity = schema.addEntity("GenreInfo");
+        entity.setTableName("hs_genre_info");
+        entity.setClassNameDao("GenreDao");
+
+        entity.addStringProperty("genre_id").primaryKey().notNull();
+        entity.addStringProperty("genre_name").notNull();
+        entity.addIntProperty("status");
     }
 
     public static void main(String[] args) throws Exception {

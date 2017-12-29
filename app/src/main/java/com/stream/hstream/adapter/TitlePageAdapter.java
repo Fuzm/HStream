@@ -14,25 +14,56 @@ import java.util.List;
 
 public class TitlePageAdapter extends FragmentPagerAdapter{
 
-    private List<ListFragment> mFragments;
+    private List<TitlePageInfo> mPageInfoList;
 
-    public TitlePageAdapter(FragmentManager fm, List<ListFragment> fragments) {
+    public TitlePageAdapter(FragmentManager fm, List<TitlePageInfo> pageInfoList) {
         super(fm);
-        mFragments = fragments;
+        mPageInfoList = pageInfoList;
     }
 
     @Override
     public CharSequence getPageTitle(int position) {
-        return super.getPageTitle(position);
+        return mPageInfoList.get(position).mTitle;
     }
 
     @Override
     public Fragment getItem(int position) {
-        return mFragments.get(position);
+        return mPageInfoList.get(position).mFragment;
     }
 
     @Override
     public int getCount() {
-        return mFragments.size();
+        return mPageInfoList.size();
+    }
+
+    public static class TitlePageInfo {
+
+        private String mKey;
+        private String mTitle;
+        private ListFragment mFragment;
+
+        public TitlePageInfo(String mKey, String title, ListFragment fragment) {
+            mTitle = title;
+            mFragment = fragment;
+        }
+
+        public String getKey() {
+            return mKey;
+        }
+
+        public String getTitle() {
+            return mTitle;
+        }
+
+        public ListFragment getFragment() {
+            return mFragment;
+        }
+
+        public void clear() {
+            if(mFragment != null) {
+                mFragment.finish();
+                mFragment = null;
+            }
+        }
     }
 }
